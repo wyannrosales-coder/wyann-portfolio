@@ -370,3 +370,26 @@ header {z-index:8;}
  .prototype-tools summary{padding:8px 4px;}
  header nav{gap:clamp(7px,2.6vw,18px);}
 }
+@font-face{font-family:"Comic Neue";src:url(comic-neue-bold.ttf) format("truetype");font-weight:700;font-display:swap;}
+.screen .thoughts .thought{
+  --bubble-fill:#fff;
+  font:700 clamp(18px,1.6vw,25px)/1 "Comic Neue",cursive;
+  letter-spacing:-.025em;background:none;border:0;box-shadow:none;filter:none;
+  width:clamp(140px,12vw,192px);height:clamp(76px,6.7vw,103px);padding:0 8px 12px;
+}
+.thoughts .thought::before,.thoughts .thought::after{content:none;}
+.bubble-art{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;}
+.bubble-art>path{stroke:#191820;stroke-width:2;stroke-linejoin:round;}
+.bubble-art .paper{fill:var(--bubble-fill);transition:fill .15s;}
+.thought:nth-child(2) span,.thought:nth-child(3) span{translate:0 2px;}
+@media(hover:hover){.screen .thoughts .thought:hover{--bubble-fill:var(--paper);}}
+.screen .thoughts .thought:is(:focus-visible,.aimed){--bubble-fill:var(--paper);}
+@media(max-width:760px){
+  .screen:not(.in-about) .thoughts{display:contents;}
+  .screen:not(.in-about) .picture{margin:100px auto 0;width:min(82%,380px);}
+  .screen:not(.in-about) .thoughts .thought{position:absolute;width:clamp(94px,31%,145px);height:66px;padding:0 3px 10px;font-size:clamp(15px,4.1vw,19px);}
+  .screen:not(.in-about) .thought:nth-child(1){inset:126px auto auto 13%;}
+  .screen:not(.in-about) .thought:nth-child(2){inset:112px 11% auto auto;}
+  .screen:not(.in-about) .thought:nth-child(3){inset:clamp(255px,62vw,355px) auto auto 1%;}
+  .screen:not(.in-about) .thought:nth-child(4){inset:clamp(266px,65vw,370px) 1% auto auto;}
+}
