@@ -119,11 +119,27 @@
   let firstGallery=true;
   while(imageIndex<p.images.length){const more=el('section',null,'case-gallery');if(firstGallery){more.append(el('h3','A closer look'));firstGallery=false;}const images=el('div',null,'chapter-images');for(let i=0;i<2&&imageIndex<p.images.length;i++){const im=el('img');im.src=p.images[imageIndex++];im.alt=p.name+' interface detail '+imageIndex;im.loading='lazy';images.append(im);}more.append(images);content.append(more);}
   const footer=el('footer',null,'case-end');footer.append(el('p','Thanks for taking a closer look.'));const source=el('a','Original case study ↗');source.href=p.source;source.target='_blank';source.rel='noopener';const back=el('button','← Back to selected work','pill');back.onclick=closeStudy;footer.append(source,back);content.append(footer);
+  prepareImageButtons();
   try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;resetCrawl();document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});study.focus({preventScroll:true});}finally{powerBusy=false;}
   if(!reduced())content.animate([{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:500,easing:'ease-out'});
  }
- let crawlTimer,crawlFrame,unclipTimer,settleFrame=0,settleAnchor=null,lastScrollTime=0,gestureStart=0,lastScrollTop=0;
- function resetCrawl(){cancelAnimationFrame(settleFrame);settleFrame=0;settleAnchor=null;clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;}
+ const lightbox=el('dialog',null,'project-lightbox');lightbox.setAttribute('aria-label','Project image viewer');
+ lightbox.innerHTML='<div class="lightbox-toolbar"><button type="button" class="pill lightbox-close" autofocus>Close ×</button><span class="lightbox-count" aria-live="polite"></span><button type="button" class="pill lightbox-zoom" aria-pressed="false">Enlarge</button></div><div class="lightbox-image-area"><img alt=""></div><div class="lightbox-controls"><button type="button" class="pill lightbox-prev">← Previous</button><button type="button" class="pill lightbox-next">Next →</button></div>';
+ document.body.append(lightbox);let lightboxImages=[],lightboxIndex=0,lightboxOpener;
+ function displayImage(index){lightboxIndex=(index+lightboxImages.length)%lightboxImages.length;const image=lightboxImages[lightboxIndex],large=lightbox.querySelector('img');large.src=image.currentSrc||image.src;large.alt=image.alt;lightbox.querySelector('.lightbox-count').textContent=(lightboxIndex+1)+' / '+lightboxImages.length;lightbox.classList.remove('enlarged');lightbox.querySelector('.lightbox-zoom').textContent='Enlarge';lightbox.querySelector('.lightbox-zoom').setAttribute('aria-pressed','false');lightbox.querySelector('.lightbox-image-area').scrollTo(0,0);}
+ function prepareImageButtons(){
+  lightboxImages=[...crawlContent.querySelectorAll('img')];
+  lightboxImages.forEach((image,index)=>{const button=el('button',null,'case-image-trigger');button.type='button';button.setAttribute('aria-label','Enlarge '+image.alt);image.before(button);button.append(image);button.onclick=()=>{stopMomentum();clearTimeout(crawlTimer);if(study.classList.contains('crawling'))settleCrawl();finishSettle();lightboxOpener=button;displayImage(index);lightbox.showModal();};});
+ }
+ lightbox.querySelector('.lightbox-close').onclick=()=>lightbox.close();
+ lightbox.querySelector('.lightbox-prev').onclick=()=>displayImage(lightboxIndex-1);
+ lightbox.querySelector('.lightbox-next').onclick=()=>displayImage(lightboxIndex+1);
+ lightbox.querySelector('.lightbox-zoom').onclick=event=>{const zoomed=lightbox.classList.toggle('enlarged');event.currentTarget.setAttribute('aria-pressed',String(zoomed));event.currentTarget.textContent=zoomed?'Fit to screen':'Enlarge';};
+ lightbox.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='ArrowLeft'){event.preventDefault();displayImage(lightboxIndex-1);}if(event.key==='ArrowRight'){event.preventDefault();displayImage(lightboxIndex+1);}});
+ lightbox.addEventListener('click',event=>{if(event.target===lightbox||event.target.classList.contains('lightbox-image-area'))lightbox.close();});
+ lightbox.addEventListener('close',()=>lightboxOpener?.focus({preventScroll:true}));
+ let crawlTimer,crawlFrame,unclipTimer,settleFrame=0,settleAnchor=null,lastScrollTime=0,gestureStart=0,lastScrollTop=0,crawlSpeed=0;
+ function resetCrawl(){cancelAnimationFrame(settleFrame);settleFrame=0;settleAnchor=null;clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;crawlSpeed=0;}
  function positionCrawl(){
   const h=study.clientHeight,origin=study.scrollTop+h*.82;
   const angle=innerWidth<=760?50:64;
@@ -166,9 +182,12 @@
  function crawl(){
   if(reduced()||study.hidden||settleAnchor)return;
   const now=performance.now(),top=study.scrollTop;
-  if(now-lastScrollTime>250&&!momentumFrame)gestureStart=lastScrollTop;
+  const elapsed=Math.max(16,now-lastScrollTime);
+  if(elapsed>350&&!momentumFrame){gestureStart=lastScrollTop;crawlSpeed=0;}
+  const speed=Math.abs(top-lastScrollTop)*1000/elapsed;
+  crawlSpeed=crawlSpeed*.65+speed*.35;
   lastScrollTime=now;lastScrollTop=top;
-  const longScroll=Math.abs(top-gestureStart)>study.clientHeight*.5;
+  const longScroll=Math.abs(top-gestureStart)>=study.clientHeight*2 && crawlSpeed>=study.clientHeight*.8;
   if(longScroll||study.classList.contains('crawling')){
    clearTimeout(unclipTimer);positionCrawl();study.classList.add('crawling');
    clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,680);
@@ -185,13 +204,14 @@
   scrollTarget=Math.max(0,Math.min(scrollTarget,study.scrollHeight-study.clientHeight));
   const distance=scrollTarget-study.scrollTop;
   if(Math.abs(distance)<.8){study.scrollTop=scrollTarget;stopMomentum();return;}
-  study.scrollTop+=distance*(1-Math.exp(-dt/135));momentumFrame=requestAnimationFrame(glide);
+  study.scrollTop+=distance*(1-Math.exp(-dt/240));momentumFrame=requestAnimationFrame(glide);
  }
  study.addEventListener('wheel',event=>{
   if(reduced()||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
   event.preventDefault();finishSettle();if(!momentumFrame){scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?study.clientHeight:1);
-  scrollTarget=Math.max(0,Math.min(scrollTarget+delta,study.scrollHeight-study.clientHeight));
+  if(Math.sign(delta)!==Math.sign(scrollTarget-study.scrollTop))scrollTarget=study.scrollTop;
+  scrollTarget=Math.max(0,Math.min(scrollTarget+delta*1.15,study.scrollHeight-study.clientHeight));
   if(!momentumFrame){previousTime=0;momentumFrame=requestAnimationFrame(glide);}
  },{passive:false});
  const interruptScroll=()=>{finishSettle();stopMomentum();};
@@ -200,7 +220,7 @@
  caseShell.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const items=[...caseShell.querySelectorAll('button,a[href],[tabindex="0"]')].filter(n=>!n.disabled);const first=items[0],last=items.at(-1);if(event.shiftKey&&(document.activeElement===first||document.activeElement===study)){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
  preview.onclick=openStudy;panel.querySelector('#view-project').onclick=openStudy;
  caseShell.querySelectorAll('.close-case').forEach(b=>b.onclick=closeStudy);
- document.addEventListener('keydown',e=>{if(!screen.classList.contains('in-portfolio')||dialog.open)return;if(e.key==='Escape'){study.hidden?home():closeStudy();}if(study.hidden&&projects.length&&!e.target.closest('select,details')){if(e.key==='ArrowRight'){e.preventDefault();select((active+1)%projects.length);}if(e.key==='ArrowLeft'){e.preventDefault();select((active+projects.length-1)%projects.length,-1);}}});
+ document.addEventListener('keydown',e=>{if(!screen.classList.contains('in-portfolio')||dialog.open||lightbox.open)return;if(e.key==='Escape'){study.hidden?home():closeStudy();}if(study.hidden&&projects.length&&!e.target.closest('select,details')){if(e.key==='ArrowRight'){e.preventDefault();select((active+1)%projects.length);}if(e.key==='ArrowLeft'){e.preventDefault();select((active+projects.length-1)%projects.length,-1);}}});
  nextPeek.onclick=()=>select((active+1)%projects.length);
  let lastWheel=0,wheelAmount=0,wheelConsumed=false;
  screen.addEventListener('wheel',event=>{

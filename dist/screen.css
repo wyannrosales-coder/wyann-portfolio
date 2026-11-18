@@ -704,3 +704,18 @@ body.reading-project{overflow:hidden;}
 .crawling #case-content{transform:perspective(var(--plane-perspective,1400px)) rotateX(64deg) scale(.88);transition-duration:.3s;}
 @media(max-width:760px){.crawling #case-content{transform:perspective(var(--plane-perspective,900px)) rotateX(50deg) scale(.92);}}
 @media(prefers-reduced-motion:reduce){#case-content,.crawling #case-content{transform:none;transition:none;clip-path:none!important;}}
+/* Contained previews preserve the full artwork; the viewer handles close inspection. */
+.case-image-trigger{display:block;position:relative;width:100%;padding:0;border:1px solid #ffffff14;background:#08080b;cursor:zoom-in;text-align:inherit;overflow:hidden;}
+.case-image-trigger::after{content:'↗ View image';position:absolute;right:12px;bottom:12px;padding:7px 10px;border-radius:20px;background:#000c;color:#fff;font-size:11px;pointer-events:none;}
+.case-shell .case-image-trigger img,.chapter-images .case-image-trigger img{display:block;width:100%;height:auto;max-height:min(65vh,640px);object-fit:contain;margin:0;border-radius:0;}
+#case-content>.case-image-trigger{margin:16px 0 65px;}
+.project-lightbox{position:fixed;inset:0;margin:auto;width:100vw;height:100dvh;max-width:none;max-height:none;border:0;border-radius:0;padding:0;background:#050505;color:#fff;box-shadow:none;overflow:hidden;}
+.project-lightbox[open]{display:grid;grid-template-rows:72px minmax(0,1fr) 66px;}
+.project-lightbox::backdrop{background:#000;backdrop-filter:none;}
+.lightbox-toolbar,.lightbox-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 5%;background:#050505;}
+.lightbox-count{font:12px monospace;color:#b9b9c4;}
+.lightbox-image-area{overflow:auto;overscroll-behavior:contain;display:grid;place-items:center;padding:12px 5%;}
+.lightbox-image-area img{display:block;max-width:100%;max-height:calc(100dvh - 162px);width:auto;height:auto;object-fit:contain;}
+.project-lightbox.enlarged .lightbox-image-area{display:block;text-align:center;}
+.project-lightbox.enlarged img{width:100%;max-width:none;max-height:none;height:auto;margin:0 auto;}
+@media(max-width:760px){.case-shell .case-image-trigger img,.chapter-images .case-image-trigger img{max-height:55svh;}.lightbox-toolbar .pill,.lightbox-controls .pill{font-size:12px;}.lightbox-image-area{padding:8px 3%;}}
