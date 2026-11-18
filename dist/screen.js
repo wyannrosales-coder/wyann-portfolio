@@ -25,6 +25,7 @@ const drafts = new Map();
 const draftingPanels = new Set(['Pitch us an idea', 'Come work here', 'Send a brief hello']);
 
 function openPanel(name) {
+  if(name === "My process" && window.openProcess){window.openProcess();return;}
   const [copy, ...links] = panels[name];
   title.textContent = name;
   description.textContent = copy;
