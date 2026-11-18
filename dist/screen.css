@@ -150,3 +150,38 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
   .picture { transform: none; }
   .pointer { top: 56%; left: 49%; }
 }
+.picture {
+  inset: auto -4% 0 auto;
+  height: 94%;
+  width: auto;
+  aspect-ratio: 1;
+  transform: none;
+  background: url(pose-3.webp) center / 100% 100% no-repeat;
+}
+.picture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  clip-path: inset(100% 0 0);
+}
+.glass::before, .glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.glass::before {
+  background: repeating-linear-gradient(0deg, transparent 0 5px, #04060420 5px 6px);
+  animation: rising-lines .65s linear infinite;
+}
+.glass::after {
+  background: linear-gradient(0deg, transparent 40%, #ccc38512 50%, #03050222 54%, transparent 62%) 0 0 / 100% 200%;
+  animation: scan-roll 4.4s linear infinite;
+}
+.screen { animation: tube-flicker 5.6s steps(1) infinite; }
+@keyframes rising-lines { to { background-position: 0 -6px; } }
+@keyframes scan-roll { to { background-position: 0 200%; } }
+@keyframes tube-flicker { 0%, 70%, 74%, 100% {filter: brightness(1)} 69%, 73% {filter: brightness(.963)} }
+@media (hover:hover) { .screen:hover .pointer { visibility:hidden; } }
+@media(max-width:760px) { .picture { inset: 14% -2% auto auto; width: 90%; height:auto; } }
