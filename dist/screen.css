@@ -419,3 +419,14 @@ header {z-index:8;}
  .screen.in-about .bio {padding-left:clamp(100px,29vw,140px);min-height:110px;}
  .screen.in-about .bio p:last-child {margin-left:calc(-1 * clamp(100px,29vw,140px));padding-top:22px;}
 }
+.screen:not(.in-about) header nav {grid-column:3;}
+@media(max-width:760px){
+ .screen:not(.in-about) .copy {top:20px;}
+ .screen:not(.in-about) .copy h1 {font-size:clamp(23px,6.2vw,31px);}
+ .screen:not(.in-about) .copy p {font-size:clamp(11px,3.1vw,15px);}
+ .screen:not(.in-about) .thoughts .thought {width:clamp(110px,35%,165px);height:clamp(72px,21vw,94px);}
+ .screen:not(.in-about) .thought:nth-child(1){inset:calc(100% - min(95vw, 440px) - 32px) auto auto 10%;}
+ .screen:not(.in-about) .thought:nth-child(2){inset:calc(100% - min(95vw, 440px) - 32px) 10% auto auto;}
+ .screen:not(.in-about) .thought:nth-child(3){inset:calc(100% - min(95vw, 440px) + 57px) auto auto 3%;}
+ .screen:not(.in-about) .thought:nth-child(4){inset:calc(100% - min(95vw, 440px) + 57px) 3% auto auto;}
+}
