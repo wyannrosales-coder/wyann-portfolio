@@ -7,7 +7,10 @@
  function render(i){
   active=i;const p=projects[i];photo.src=p.cover;photo.alt=p.name+' — '+p.subtitle;
   panel.querySelector('#work-title').textContent=p.name;
-  panel.querySelector('#work-subtitle').textContent=p.subtitle;
+  panel.querySelector('#work-subtitle').textContent=p.subtitle+' '+p.scope;
+  panel.querySelector('#work-role').textContent=p.role;
+  preview.querySelector('.left-panel').src=p.images[Math.min(2,p.images.length-1)];
+  preview.querySelector('.right-panel').src=p.images[Math.min(4,p.images.length-1)];
   panel.querySelector('#work-count').textContent=String(i+1).padStart(2,'0')+' / 05 · '+p.scope;
   [...tiles.children].forEach((t,j)=>{t.setAttribute('aria-pressed',String(i===j));});
  }
@@ -16,9 +19,14 @@
   const img=new Image();img.src=projects[i].cover;try{await img.decode();}catch{}
   if(ticket!==serial)return;
   preview.getAnimations().forEach(a=>a.cancel());
-  if(!reduced())await preview.animate([{transform:'perspective(1100px) rotateY(0) scale(1)',opacity:1},{transform:'perspective(1100px) rotateY(-16deg) translateX(-12%) scale(.88)',opacity:0}],{duration:240,easing:'ease-in',fill:'forwards'}).finished.catch(()=>{});
-  if(ticket!==serial)return;render(i);preview.getAnimations().forEach(a=>a.cancel());
-  if(!reduced())preview.animate([{transform:'perspective(1100px) rotateY(16deg) translateX(14%) scale(.88)',opacity:0},{transform:'perspective(1100px) rotateY(0) translateX(0) scale(1)',opacity:1}],{duration:540,easing:'cubic-bezier(.16,1,.3,1)'});
+  gallery.querySelectorAll('.departing-project').forEach(n=>n.remove());
+  const old=preview.cloneNode(true);old.className+=' departing-project';old.removeAttribute('aria-label');old.setAttribute('aria-hidden','true');old.inert=true;old.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+  preview.parentElement.append(old);render(i);
+  if(reduced()){old.remove();return;}
+  const timing={duration:1100,easing:'cubic-bezier(.65,0,.25,1)',fill:'both'};
+  const out=old.animate([{transform:'perspective(1200px) translateY(0) rotateX(0deg) scale(1)'},{transform:'perspective(1200px) translateY(-105%) rotateX(60deg) scale(.78)'}],timing);
+  const incoming=preview.animate([{transform:'perspective(1200px) translateY(105%) rotateX(-60deg) scale(.78)'},{transform:'perspective(1200px) translateY(0) rotateX(0deg) scale(1)'}],timing);
+  await Promise.all([out.finished.catch(()=>{}),incoming.finished.catch(()=>{})]);old.remove();if(ticket===serial)incoming.cancel();
  }
  ready=fetch('projects.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
   projects=data;
@@ -28,10 +36,10 @@
   if(entering || screen.classList.contains('in-portfolio'))return;
   entering=true;
   if(showingAbout)changeSection(false);
-  if(!reduced()){const exits=[picture,thoughts,copy].map(n=>n.animate([{transform:'perspective(1100px) rotateX(0) scale(1)',opacity:1},{transform:'perspective(1100px) rotateX(12deg) translateY(-18%) scale(.86)',opacity:0}],{duration:320,easing:'ease-in'}));await Promise.all(exits.map(a=>a.finished.catch(()=>{})));}
+  if(!reduced()){const exits=[picture,thoughts,copy].map(n=>n.animate([{transform:'perspective(1100px) rotateX(0) scale(1)',opacity:1},{transform:'perspective(1100px) rotateX(55deg) translateY(-100%) scale(.78)',opacity:0}],{duration:700,easing:'cubic-bezier(.65,0,.25,1)'}));await Promise.all(exits.map(a=>a.finished.catch(()=>{})));}
   entering=false;
   panel.hidden=false;panel.inert=false;screen.classList.add('in-portfolio');copy.inert=true;thoughts.inert=true;document.querySelector('.home-back').hidden=false;
-  if(!reduced())gallery.animate([{transform:'perspective(1100px) rotateX(-12deg) translateY(22%) scale(.88)',opacity:0},{transform:'none',opacity:1}],{duration:750,easing:'cubic-bezier(.16,1,.3,1)'});
+  if(!reduced())gallery.animate([{transform:'perspective(1200px) translateY(100%) rotateX(-55deg) scale(.8)'},{transform:'perspective(1200px) translateY(0) rotateX(0deg) scale(1)'}],{duration:1100,easing:'cubic-bezier(.65,0,.25,1)'});
   await ready;panel.querySelector('#view-project').focus({preventScroll:true});
  };
  function closeStudy(){study.hidden=true;gallery.hidden=false;panel.scrollTop=0;panel.querySelector('#view-project').focus({preventScroll:true});}
