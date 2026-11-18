@@ -1,14 +1,14 @@
 :root {
   color-scheme: dark;
   font-family: Arial, Helvetica, sans-serif;
-  color: #f5ead0;
+  color: #f6f7fa;
   background: #101110;
 }
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; }
 button, textarea { font: inherit; }
 button { color: inherit; cursor: pointer; }
-button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px dashed #ffebaf; outline-offset: 5px; }
+button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px dashed #cce6ff; outline-offset: 5px; }
 .set {
   min-height: 100svh;
   padding: clamp(14px, 3.3vh, 44px) clamp(16px, 4vw, 78px);
@@ -27,7 +27,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px das
   border-radius: 7% / 9%;
   border: 2px solid #0b0d0b;
   box-shadow: 0 0 0 8px #050605, 0 0 0 10px #49474165, 0 4px 20px 13px #000a;
-  background: radial-gradient(ellipse at 10% 7%, #453528, transparent 45%), radial-gradient(ellipse at 66% 70%, #242e21, #161b14 65%, #202017);
+  background: radial-gradient(ellipse at 10% 7%, #24364c, transparent 45%), radial-gradient(ellipse at 66% 70%, #202b37, #131920 65%, #181d24);
 }
 header {
   display: grid;
@@ -44,7 +44,7 @@ header {
 nav { display: flex; gap: clamp(10px, 1.5vw, 26px); }
 nav button, .close { background: none; border: 0; padding: 6px 1px; }
 nav button { font-size: clamp(13px, 1.35vw, 21px); }
-nav button:hover { color: #fff9e8; text-shadow: 0 0 9px #ffc16b; }
+nav button:hover { color: #fff; text-shadow: 0 0 9px #b4dcff; }
 .contact { justify-self: end; }
 .copy {
   align-self: center;
@@ -60,7 +60,7 @@ h1 {
   line-height: .995;
   font-weight: 650;
   letter-spacing: -.055em;
-  text-shadow: 0 0 19px #ffb95e76, 1px 0 #f6a96266, -1px 0 #96fff43a;
+  text-shadow: 0 0 19px #d6e7ff37, 1px 0 #ec677933, -1px 0 #96fff43a;
 }
 h1 span { display: block; }
 .copy p { margin: 31px 0 32px; font-size: clamp(17px, 1.85vw, 27px); letter-spacing: -.035em; }
@@ -68,20 +68,20 @@ h1 span { display: block; }
 .pill {
   font-size: clamp(14px, 1.4vw, 20px);
   border-radius: 999px;
-  border: 1.5px solid #eee3c8;
+  border: 1.5px solid #e5eaf0;
   background: #14181345;
   padding: .58em .96em;
   white-space: nowrap;
   transition: color .18s, background .18s, box-shadow .18s;
 }
-.primary, .pill:hover { background: #faefd6; color: #171710; box-shadow: 0 0 23px #ffbb5f65; }
-.primary:hover { background: #fff9eb; }
+.primary, .pill:hover { background: #f4f6fa; color: #171710; box-shadow: 0 0 23px #bedcff39; }
+.primary:hover { background: #fff; }
 .picture {
   position: absolute;
   inset: 4% -2% 0 45%;
   background: url(jules.webp) center top / cover no-repeat;
   mix-blend-mode: screen;
-  filter: saturate(1.07) contrast(1.04);
+  filter: saturate(1.18) contrast(1.065);
   transform: translate(var(--pan-x, 0px), var(--pan-y, 0px)) scale(1.025);
 }
 .glass {
@@ -91,7 +91,7 @@ h1 span { display: block; }
   pointer-events: none;
   box-shadow: inset 0 0 72px 25px #030503aa, inset 0 1px 8px #f6e3c136;
   background:
-    radial-gradient(ellipse at 75% -14%, #fff5dd35, transparent 41%),
+    radial-gradient(ellipse at 75% -14%, #f4f7ff35, transparent 41%),
     radial-gradient(circle at 14% 77%, #f6dcc34f .4px, transparent 1.2px) 0 0 / 137px 119px,
     radial-gradient(circle at 68% 4%, #f6dcc344 .5px, transparent 1.3px) 0 0 / 173px 157px,
     repeating-linear-gradient(0deg, #0003 0 1px, transparent 1px 3px),
@@ -112,7 +112,7 @@ h1 span { display: block; }
   display: block;
   width: 100%;
   height: 100%;
-  background: #fff9eb;
+  background: #fff;
   clip-path: polygon(0 0, 10% 0, 10% 7%, 20% 7%, 20% 14%, 30% 14%, 30% 21%, 40% 21%, 40% 28%, 50% 28%, 50% 35%, 60% 35%, 60% 42%, 70% 42%, 70% 49%, 80% 49%, 80% 58%, 53% 58%, 53% 66%, 62% 66%, 62% 75%, 71% 75%, 71% 84%, 55% 91%, 47% 82%, 40% 82%, 40% 73%, 32% 73%, 32% 66%, 22% 66%, 22% 75%, 11% 75%, 11% 83%, 0 83%);
 }
 .screen.tracking .picture { animation: tracking .42s steps(3, end); }
@@ -122,18 +122,18 @@ h1 span { display: block; }
 }
 dialog {
   width: min(500px, calc(100% - 40px));
-  background: #25271e;
+  background: #20252c;
   color: inherit;
-  border: 1px solid #cbb99a;
+  border: 1px solid #9daabc;
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 0 35px #c1934860;
+  box-shadow: 0 0 35px #92b1d438;
 }
 dialog::backdrop { background: #060705bb; backdrop-filter: blur(5px); }
 dialog h2 { margin: 0 35px 12px 0; font-size: 30px; }
 dialog p { line-height: 1.5; }
 .close { position: absolute; top: 14px; right: 22px; font-size: 28px; width: 35px; }
-textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color: inherit; background: #151811; border: 1px solid #a39173; border-radius: 8px; resize: vertical; }
+textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color: inherit; background: #14191f; border: 1px solid #8393a8; border-radius: 8px; resize: vertical; }
 @media (max-width: 760px) {
   .screen { min-height: max(730px, calc(100svh - 32px)); border-radius: 9% / 5%; }
   header { margin: 0 7%; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 23px; }
@@ -176,7 +176,7 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
   animation: rising-lines .65s linear infinite;
 }
 .glass::after {
-  background: linear-gradient(0deg, transparent 40%, #ccc38512 50%, #03050222 54%, transparent 62%) 0 0 / 100% 200%;
+  background: linear-gradient(0deg, transparent 40%, #dbe8f812 50%, #03050222 54%, transparent 62%) 0 0 / 100% 200%;
   animation: scan-roll 4.4s linear infinite;
 }
 .screen { animation: tube-flicker 5.6s steps(1) infinite; }
@@ -223,7 +223,3 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 .glitch-band[data-effect="tear"] img { translate:var(--tear) 0; }
 .glitch-band[data-effect="grain"] img { filter:contrast(1.16); }
 .glitch-band[data-effect="bleed"] img { filter:saturate(1.35); }
-.glass::after {
-  background:linear-gradient(to bottom,transparent,#e6e7b539 48%,#0004 54%,transparent) 0 calc(var(--beam,-80px) - 16px) / 100% 32px no-repeat;
-  animation:glass-flicker 4s steps(1) infinite;
-}

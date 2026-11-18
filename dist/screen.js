@@ -126,10 +126,7 @@ screen.addEventListener('pointerleave', event => {
   if (event.pointerType !== 'touch') turn(0, 4);
 });
 
-// The glass highlight and cropped portrait copy share one vertical coordinate.
-const glass = document.querySelector('.glass');
-let sweepFrame = 0;
-let sweepTimer = 0;
+let glitchTimer;
 const variants = {};
 for (const effect of ['grain', 'bleed']) {
   variants[effect] = portraits.map((_, index) => {
@@ -151,40 +148,26 @@ function nextEffect() {
   }
   return effects.pop();
 }
-function sweep() {
+function glitch() {
   if (motion.matches || document.hidden) return;
   const effect = nextEffect();
-  const duration = 1100 + Math.random() * 1700;
-  const start = performance.now();
+  const top = 8 + Math.random() * 73;
+  const height = effect === 'grain' ? 11 : 5 + Math.random() * 4;
+  band.style.clipPath = `inset(${top}% 0 ${100-top-height}% 0)`;
+  band.style.setProperty('--tear', Math.random() < .5 ? '-12px' : '12px');
   band.dataset.effect = effect;
   syncSlice();
-  band.style.setProperty('--tear', Math.random() < .5 ? '-13px' : '13px');
-  function advance(now) {
-    const progress = (now - start) / duration;
-    if (progress >= 1) {
-      glass.style.removeProperty('--beam');
-      band.removeAttribute('data-effect');
-      sweepTimer = setTimeout(sweep, 280 + Math.random() * 1450);
-      return;
-    }
-    const bounds = glass.getBoundingClientRect();
-    const portrait = picture.getBoundingClientRect();
-    const position = (1 - progress) * (bounds.height + 32) - 16;
-    const local = bounds.top + position - portrait.top;
-    glass.style.setProperty('--beam', position + 'px');
-    band.style.clipPath = 'inset(' + Math.max(0, local - 13) + 'px 0 ' +
-      Math.max(0, portrait.height - local - 13) + 'px 0)';
-    sweepFrame = requestAnimationFrame(advance);
-  }
-  advance(start);
+  glitchTimer = setTimeout(() => {
+    band.removeAttribute('data-effect');
+    glitchTimer = setTimeout(glitch, 650 + Math.random() * 3000);
+  }, 170 + Math.random() * 250);
 }
-function restartSweep() {
-  clearTimeout(sweepTimer);
-  cancelAnimationFrame(sweepFrame);
+function restartGlitches() {
+  clearTimeout(glitchTimer);
   band.removeAttribute('data-effect');
-  glass.style.removeProperty('--beam');
-  sweep();
+  if (!motion.matches && !document.hidden)
+    glitchTimer = setTimeout(glitch, 400 + Math.random() * 800);
 }
-motion.addEventListener('change', restartSweep);
-document.addEventListener('visibilitychange', restartSweep);
-sweep();
+motion.addEventListener('change', restartGlitches);
+document.addEventListener('visibilitychange', restartGlitches);
+restartGlitches();
