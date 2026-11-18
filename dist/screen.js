@@ -67,45 +67,43 @@ const strips = Array.from({length: 9}, (_, i) => {
   image.src = 'gaze-' + i + '.webp';
   return image;
 });
-// Blend the four surrounding photographed poses at the display refresh rate.
 const canvas = document.createElement('canvas');
-const blend = document.createElement('canvas');
-const size = 400;
-for (const surface of [canvas, blend]) surface.width = surface.height = size;
 picture.append(canvas);
 const output = canvas.getContext('2d');
-const buffer = blend.getContext('2d');
 let x = 0, y = 4, bodyX = 0, bodyY = 4;
 let targetX = x, targetY = y, last = 0, frame = 0;
+
 function paint() {
-  const row = Math.floor(y), col = Math.floor(x);
-  const fx = x - col, fy = y - row;
-  const weights = [(1-fx)*(1-fy), fx*(1-fy), (1-fx)*fy, fx*fy];
-  if (!strips[row].naturalWidth || !strips[Math.min(8,row+1)].naturalWidth) return;
-  buffer.clearRect(0,0,size,size);
-  buffer.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < 4; i++) {
-    if (!weights[i]) continue;
-    buffer.globalAlpha = weights[i];
-    buffer.drawImage(strips[Math.min(8,row+(i>>1))], Math.min(8,col+(i%2))*size,0,size,size,0,0,size,size);
+  const strip = strips[Math.round(y)];
+  if (!strip.naturalWidth) return;
+  const size = strip.naturalHeight;
+  const sourceX = Math.round(x) * size;
+  const pixels = Math.max(1, Math.round(picture.clientWidth * Math.min(devicePixelRatio, 2)));
+  if (canvas.width !== pixels || canvas.height !== pixels) {
+    canvas.width = canvas.height = pixels;
+    output.imageSmoothingQuality = 'high';
   }
-  // Pivot at the base of the torso. The far shoulder narrows and drops
-  // slightly while the near shoulder rises with the delayed body turn.
-  output.clearRect(0,0,size,size);
-  const yaw = (bodyX-4)/4, pitch = (bodyY-4)/4;
-  for (let sy = 0; sy < size; sy += 4) {
-    const v = sy/size;
-    const shoulder = Math.exp(-Math.pow((v-.66)/.31,2));
-    const offset = yaw * (3*(1-v) + 9*shoulder);
-    const width = 1 - .025*Math.abs(yaw)*shoulder;
-    output.setTransform(width, yaw*.023*shoulder, 0, 1,
-      offset + (1-width)*size/2, pitch*4*shoulder - yaw*.023*shoulder*size/2);
-    output.drawImage(blend,0,sy,size,Math.min(5,size-sy),0,sy,size,Math.min(5,size-sy));
-  }
+  const scale = pixels / size;
   output.resetTransform();
+  output.clearRect(0, 0, pixels, pixels);
+  output.scale(scale, scale);
+  // Draw the face directly from one pose. Confine the follow-through to the torso.
+  const collar = Math.round(size * .50);
+  output.drawImage(strip, sourceX, 0, size, collar, 0, 0, size, collar);
+  const yaw = (bodyX - 4) / 4, pitch = (bodyY - 4) / 4;
+  for (let top = collar; top < size; top += 4) {
+    const progress = (top - collar) / (size - collar);
+    const influence = Math.sin(progress * Math.PI);
+    const tilt = yaw * .023 * influence;
+    const height = Math.min(5, size - top);
+    output.setTransform(scale, tilt * scale, 0, scale,
+      yaw * 9 * influence * scale, (pitch * 4 * influence - tilt * size / 2) * scale);
+    output.drawImage(strip, sourceX, top, size, height, 0, top, size, height);
+  }
   canvas.style.opacity = '1';
   picture.style.backgroundImage = 'none';
 }
+new ResizeObserver(schedule).observe(picture);
 function render(now) {
   const dt = Math.min(50, now-last || 16);
   last = now;
