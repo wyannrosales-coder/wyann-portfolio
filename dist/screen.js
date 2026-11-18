@@ -212,7 +212,19 @@ function changeSection(open) {
     channel.value = aboutChannel && aboutChannel !== introChannel ? aboutChannel : String((Number(introChannel)+1)%5);
     screen.classList.add('posing');
     let step = motion.matches ? 2 : 0;
-    function lift() {showPose(step); if (step < 2) {step++; poseTimer=setTimeout(lift,175);} }
+    function lift() {
+      showPose(step);
+      if (step < 2) {
+        const delay = step === 0 ? 280 : 190;
+        step++;
+        poseTimer = setTimeout(lift, delay);
+      } else if (!motion.matches) {
+        poses[2].animate([
+          {transform:'translateY(-0.7%) rotate(-0.65deg)'},
+          {transform:'translateY(0) rotate(0deg)'}
+        ], {duration:360, easing:'cubic-bezier(.18,.72,.22,1)'});
+      }
+    }
     lift();
   } else {
     aboutChannel=channel.value; channel.value=introChannel;
