@@ -4,7 +4,9 @@
  const stars=document.createElement('div');stars.className='case-stars';stars.setAttribute('aria-hidden','true');
  for(let i=0;i<52;i++){const star=document.createElement('i');star.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${3+Math.random()*6}s;--delay:${-Math.random()*9}s`;stars.append(star);}
  const caseNav=document.createElement('nav');caseNav.className='case-nav';caseNav.innerHTML='<button class="pill close-case">← All projects</button><span>WYANN ROSALES / SELECTED WORK</span><button class="pill case-home">Home ↗</button>';
- study.querySelectorAll('.close-case').forEach(n=>n.remove());caseShell.append(stars,caseNav,study);document.body.append(caseShell);
+ const caseRail=document.createElement('aside');caseRail.className='case-rail';caseRail.setAttribute('aria-label','Project progress and chapters');
+ caseRail.innerHTML='<div class="case-rail-label">CHAPTERS</div><div class="case-rail-track"><div class="case-rail-progress"></div><button type="button" class="case-rail-thumb" role="slider" aria-label="Drag to move through this project" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></button><div class="case-rail-markers"></div></div>';
+ study.querySelectorAll('.close-case').forEach(n=>n.remove());caseShell.append(stars,caseNav,study,caseRail);document.body.append(caseShell);
  const crawlContent=study.querySelector('#case-content'),crawlTrack=document.createElement('div');crawlTrack.className='case-track';crawlContent.before(crawlTrack);crawlTrack.append(crawlContent);
  const tiles=panel.querySelector('.work-tiles'), preview=panel.querySelector('.work-preview'), photo=panel.querySelector('#work-image');
  let projects=[], active=0, serial=0, ready, entering=false, switching=false;
@@ -138,7 +140,7 @@
   while(imageIndex<p.images.length){const more=el('section',null,'case-gallery');if(firstGallery){more.append(el('h3','A closer look'));firstGallery=false;}const images=el('div',null,'chapter-images');for(let i=0;i<2&&imageIndex<p.images.length;i++){const im=el('img');im.src=p.images[imageIndex++];im.alt=p.name+' interface detail '+imageIndex;im.loading='lazy';images.append(im);}more.append(images);content.append(more);}
   const footer=el('footer',null,'case-end');footer.append(el('p','Thanks for taking a closer look.'));const source=el('a','Original case study ↗');source.href=p.source;source.target='_blank';source.rel='noopener';const back=el('button','← Back to selected work','pill');back.onclick=closeStudy;footer.append(source,back);content.append(footer);
   prepareImageButtons();
-  try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;resetCrawl();document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});study.focus({preventScroll:true});}finally{powerBusy=false;}
+  try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;resetCrawl();document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});buildRail();study.focus({preventScroll:true});}finally{powerBusy=false;}
   if(!reduced())content.animate([{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:500,easing:'ease-out'});
  }
  const lightbox=el('dialog',null,'project-lightbox');lightbox.setAttribute('aria-label','Project image viewer');
@@ -202,25 +204,44 @@
   function settle(now){pinAnchor();if(now-started<650)settleFrame=requestAnimationFrame(settle);else finishSettle();}
   settleFrame=requestAnimationFrame(settle);
  }
- function crawl(){
-  if(reduced()||study.hidden||settleAnchor)return;
-  const now=performance.now(),top=study.scrollTop;
-  if(now-lastTiltInput>=1500){if(study.classList.contains('crawling'))settleCrawl();return;}
-  const elapsed=Math.max(16,now-lastScrollTime);
-  if(elapsed>350&&!momentumFrame){gestureStart=lastScrollTop;crawlSpeed=0;}
-  const speed=Math.abs(top-lastScrollTop)*1000/elapsed;
-  crawlSpeed=crawlSpeed*.65+speed*.35;
-  lastScrollTime=now;lastScrollTop=top;
-  const longScroll=Math.abs(top-gestureStart)>=study.clientHeight*2 && crawlSpeed>=study.clientHeight*.8;
-  if(longScroll||study.classList.contains('crawling')){
-   clearTimeout(unclipTimer);positionCrawl();study.classList.add('crawling');
-   clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,Math.max(0,1500-(now-lastTiltInput)));
-  }
+ const railTrack=caseRail.querySelector('.case-rail-track'),railThumb=caseRail.querySelector('.case-rail-thumb'),railProgress=caseRail.querySelector('.case-rail-progress'),railMarkers=caseRail.querySelector('.case-rail-markers');
+ let railDragging=false;
+ function railRatio(){return study.scrollTop/Math.max(1,study.scrollHeight-study.clientHeight);}
+ function syncRail(){
+  const ratio=Math.max(0,Math.min(1,railRatio())),travel=Math.max(0,railTrack.clientHeight-railThumb.offsetHeight);
+  railThumb.style.translate=`0 ${ratio*travel}px`;railProgress.style.height=`${ratio*100}%`;railThumb.setAttribute('aria-valuenow',String(Math.round(ratio*100)));
  }
- study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
+ function buildRail(){
+  railMarkers.replaceChildren();
+  const sections=[crawlContent.querySelector('.case-intro'),...crawlContent.querySelectorAll('.case-chapter,.case-gallery'),crawlContent.querySelector('.case-end')].filter(Boolean);
+  const maxScroll=Math.max(1,study.scrollHeight-study.clientHeight);
+  sections.slice(0,8).forEach((section,index)=>{
+   const marker=document.createElement('button'),heading=section.querySelector('h2,h3,p');
+   marker.type='button';marker.className='case-rail-marker';marker.style.top=`${Math.min(100,section.offsetTop/maxScroll*100)}%`;
+   marker.innerHTML=`<span>${String(index+1).padStart(2,'0')}</span><b>${heading?.textContent?.trim().slice(0,32)||'End'}</b>`;
+   marker.onclick=()=>study.scrollTo({top:Math.min(maxScroll,section.offsetTop),behavior:reduced()?'instant':'smooth'});railMarkers.append(marker);
+  });
+  syncRail();
+ }
+ function dragRail(event){
+  const bounds=railTrack.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(event.clientY-bounds.top)/bounds.height));
+  study.scrollTop=ratio*Math.max(0,study.scrollHeight-study.clientHeight);positionCrawl();syncRail();
+ }
+ railTrack.addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;event.preventDefault();finishSettle();stopMomentum();railDragging=true;railTrack.setPointerCapture(event.pointerId);positionCrawl();study.classList.add('crawling');dragRail(event);
+ });
+ railTrack.addEventListener('pointermove',event=>{if(railDragging)dragRail(event);});
+ function releaseRail(){if(!railDragging)return;railDragging=false;settleCrawl();}
+ railTrack.addEventListener('pointerup',releaseRail);railTrack.addEventListener('pointercancel',releaseRail);railTrack.addEventListener('lostpointercapture',releaseRail);
+ railThumb.addEventListener('keydown',event=>{
+  if(!['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(event.key))return;event.preventDefault();
+  const max=Math.max(0,study.scrollHeight-study.clientHeight),step=event.key.startsWith('Page')?study.clientHeight*.8:study.clientHeight*.15;
+  study.scrollTop=event.key==='Home'?0:event.key==='End'?max:Math.max(0,Math.min(max,study.scrollTop+(event.key.includes('Up')?-step:step)));
+ });
+ study.addEventListener('scroll',syncRail,{passive:true});
  motion.addEventListener('change',resetCrawl);
  mobileView.addEventListener('change',()=>{finishSettle();resetCrawl();stopMomentum();layoutCovers();});
- window.addEventListener('resize',()=>{if(study.classList.contains('crawling'))positionCrawl();});
+ window.addEventListener('resize',()=>{if(study.classList.contains('crawling'))positionCrawl();if(!caseShell.hidden)buildRail();});
  let momentumFrame=0,scrollTarget=0,previousTime=0,virtualScroll=0,lastWheelInput=0;
  function stopMomentum(){cancelAnimationFrame(momentumFrame);momentumFrame=0;previousTime=0;}
  function glide(time){
@@ -236,17 +257,15 @@
  study.addEventListener('wheel',event=>{
   if(mobileView.matches||reduced()||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
   const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?study.clientHeight:1);
-  event.preventDefault();if(Math.abs(delta)>=3){finishSettle();lastTiltInput=performance.now();}if(!momentumFrame){virtualScroll=scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
+  event.preventDefault();if(!momentumFrame){virtualScroll=scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   if(!delta)return;
   lastWheelInput=performance.now();
   if(Math.sign(delta)!==Math.sign(scrollTarget-study.scrollTop))virtualScroll=scrollTarget=study.scrollTop;
   scrollTarget=Math.max(0,Math.min(scrollTarget+delta*1.35,study.scrollHeight-study.clientHeight));
   if(!momentumFrame){previousTime=0;momentumFrame=requestAnimationFrame(glide);}
  },{passive:false});
- const interruptScroll=()=>{finishSettle();stopMomentum();lastTiltInput=performance.now();};
+ const interruptScroll=()=>{finishSettle();stopMomentum();};
  study.addEventListener('pointerdown',interruptScroll);study.addEventListener('touchstart',interruptScroll,{passive:true});study.addEventListener('keydown',interruptScroll);motion.addEventListener('change',stopMomentum);
- study.addEventListener('touchmove',()=>{lastTiltInput=performance.now();},{passive:true});
- study.addEventListener('pointermove',event=>{if(event.buttons)lastTiltInput=performance.now();},{passive:true});
  caseNav.querySelector('.close-case').onclick=closeStudy;caseNav.querySelector('.case-home').onclick=home;
  caseShell.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const items=[...caseShell.querySelectorAll('button,a[href],[tabindex="0"]')].filter(n=>!n.disabled);const first=items[0],last=items.at(-1);if(event.shiftKey&&(document.activeElement===first||document.activeElement===study)){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
  preview.onclick=openStudy;panel.querySelector('#view-project').onclick=openStudy;
