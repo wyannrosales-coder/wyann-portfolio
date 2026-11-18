@@ -196,22 +196,26 @@
  study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
  motion.addEventListener('change',resetCrawl);
  window.addEventListener('resize',()=>{if(study.classList.contains('crawling'))positionCrawl();});
- let momentumFrame=0,scrollTarget=0,previousTime=0;
+ let momentumFrame=0,scrollTarget=0,previousTime=0,virtualScroll=0,lastWheelInput=0;
  function stopMomentum(){cancelAnimationFrame(momentumFrame);momentumFrame=0;previousTime=0;}
  function glide(time){
   if(study.hidden||reduced()){stopMomentum();return;}
   const dt=Math.min(40,time-previousTime||16);previousTime=time;
   scrollTarget=Math.max(0,Math.min(scrollTarget,study.scrollHeight-study.clientHeight));
-  const distance=scrollTarget-study.scrollTop;
-  if(Math.abs(distance)<.8){study.scrollTop=scrollTarget;stopMomentum();return;}
-  study.scrollTop+=distance*(1-Math.exp(-dt/240));momentumFrame=requestAnimationFrame(glide);
+  const distance=scrollTarget-virtualScroll;
+  if(Math.abs(distance)<.6){study.scrollTop=scrollTarget;stopMomentum();return;}
+  const decay=time-lastWheelInput<90?240:540;
+  virtualScroll+=distance*(1-Math.exp(-dt/decay));
+  study.scrollTop=virtualScroll;momentumFrame=requestAnimationFrame(glide);
  }
  study.addEventListener('wheel',event=>{
   if(reduced()||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
-  event.preventDefault();finishSettle();if(!momentumFrame){scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
+  event.preventDefault();finishSettle();if(!momentumFrame){virtualScroll=scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?study.clientHeight:1);
-  if(Math.sign(delta)!==Math.sign(scrollTarget-study.scrollTop))scrollTarget=study.scrollTop;
-  scrollTarget=Math.max(0,Math.min(scrollTarget+delta*1.15,study.scrollHeight-study.clientHeight));
+  if(!delta)return;
+  lastWheelInput=performance.now();
+  if(Math.sign(delta)!==Math.sign(scrollTarget-study.scrollTop))virtualScroll=scrollTarget=study.scrollTop;
+  scrollTarget=Math.max(0,Math.min(scrollTarget+delta*1.35,study.scrollHeight-study.clientHeight));
   if(!momentumFrame){previousTime=0;momentumFrame=requestAnimationFrame(glide);}
  },{passive:false});
  const interruptScroll=()=>{finishSettle();stopMomentum();};
