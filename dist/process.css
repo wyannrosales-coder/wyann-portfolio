@@ -47,16 +47,26 @@
 .process-outro h2{font-size:clamp(40px,6vw,92px);line-height:1;letter-spacing:-.06em;margin:0 0 18px;}
 .process-outro p{font-size:clamp(15px,1.3vw,19px);line-height:1.55;color:#d4d9e6;max-width:520px;margin:0 0 28px;}
 .process-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.process-mobile-nav{display:none;}
 
 @media(max-width:760px){
   .screen.in-process{height:calc(100svh - 24px);min-height:0;}
+  .process-canvas{height:52%;transform:perspective(900px) rotateY(calc(var(--gyro-x,0)*2deg)) rotateX(calc(var(--gyro-y,0)*-2deg));transition:transform .16s linear;}
+  .process-scroller{overflow:hidden;touch-action:none;}
+  .process-ui{touch-action:pan-x;}
   .process-hero{left:7%;right:7%;top:auto;bottom:10%;transform:none;max-width:none;}
   .process-hero h2{font-size:clamp(34px,10vw,46px);}
-  .process-step{left:7%;right:7%;width:auto;top:auto;bottom:5%;transform:translateY(var(--y,0px));}
+  .process-step{left:7%;right:7%;width:auto;top:52%;bottom:auto;max-height:38%;overflow:auto;padding-bottom:56px;transform:translateY(var(--y,0px));}
   .process-step h3{font-size:34px;}
   .process-tag,.process-out,.process-note{display:none;}
   .process-desc{font-size:13px;margin-bottom:10px;}
   .process-step ul{margin:0;}.process-step li{font-size:13px;}
   .process-rail{display:none;}
+  .process-mobile-nav{position:absolute;z-index:5;left:5%;right:5%;bottom:max(10px,env(safe-area-inset-bottom));display:grid;grid-template-columns:48px 1fr 48px;align-items:center;gap:12px;pointer-events:auto;}
+  .process-mobile-nav>button{width:48px;height:48px;padding:0;border:1px solid #ffffff66;border-radius:50%;background:#0b1027cc;color:#fff;font-size:34px;line-height:1;touch-action:manipulation;}
+  .process-mobile-nav>button:disabled{opacity:.25;}
+  .process-dots{display:flex;justify-content:center;gap:8px;pointer-events:auto;}
+  .process-dots button{width:8px;height:8px;padding:0;border:1px solid #ffffff99;border-radius:50%;background:transparent;touch-action:manipulation;}
+  .process-dots button.on{background:#ffc65a;border-color:#ffc65a;transform:scale(1.35);}
 }
 @media(prefers-reduced-motion:reduce){.process-hint span{animation:none;}}

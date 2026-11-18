@@ -130,6 +130,29 @@ screen.addEventListener('pointerleave', event => {
   if (event.pointerType !== 'touch') turn(0, 4);
 });
 
+// Mobile motion parallax. Browsers with implicit permission start immediately;
+// iOS requests access on the visitor's first gesture, then stays enabled.
+function gyroMove(event){
+  if(innerWidth>900 || motion.matches || event.gamma == null || event.beta == null) return;
+  const gx=Math.max(-1,Math.min(1,event.gamma/28));
+  const gy=Math.max(-1,Math.min(1,(event.beta-42)/32));
+  screen.style.setProperty('--gyro-bg-x',`${gx*12}px`);
+  screen.style.setProperty('--gyro-bg-y',`${gy*9}px`);
+  screen.style.setProperty('--gyro-x',gx.toFixed(3));
+  screen.style.setProperty('--gyro-y',gy.toFixed(3));
+  picture.style.setProperty('--pan-x',`${gx*7}px`);
+  picture.style.setProperty('--pan-y',`${gy*5}px`);
+  if(!screen.querySelector('.thought.aimed')&&!screen.classList.contains('in-about')&&!screen.classList.contains('in-portfolio')) turn(4+gx*4,4+gy*4);
+  document.dispatchEvent(new CustomEvent('wyann:gyro',{detail:{x:gx,y:gy}}));
+}
+function startGyro(){window.addEventListener('deviceorientation',gyroMove,{passive:true});}
+startGyro();
+document.addEventListener('pointerdown',async function askMotion(){
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    try{if(await DeviceOrientationEvent.requestPermission()==='granted')startGyro();}catch{}
+  }
+},{once:true,passive:true});
+
 let glitchTimer;
 const variants = {};
 for (const effect of ['grain', 'bleed']) {

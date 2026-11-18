@@ -35,10 +35,23 @@ function tile(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x+1,y+1,w-2,h-2);c
 function draw(){ctx.clearRect(0,0,canvas.width,480);if(wall){bricks.forEach((v,i)=>{if(v)tile(4+i%8*49,36+Math.floor(i/8)*25,46,21,colors[v]);});tile(paddle-32,432,64,12,colors[1]);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ball.x,ball.y,6,0,Math.PI*2);ctx.fill();}else{board.forEach((r,j)=>r.forEach((v,i)=>tile(i*24,j*24,24,24,v?colors[v]:'#10192d')));piece.forEach((r,j)=>r.forEach((v,i)=>{if(v)tile((px+i)*24,(py+j)*24,24,24,colors[v]);}));}}
 function frame(now){const dt=Math.min(.025,(now-last)/1000);last=now;if(state==='play'){if(wall)rally(dt);else if((timer+=dt)>Math.max(.1,.65-lines*.015)){fall();timer=0;}}draw();requestAnimationFrame(frame);}
 const bindings=wall?['ArrowLeft','ArrowRight']:['ArrowLeft','ArrowRight','ArrowUp','Space'];
-for(const code of bindings){const b=document.createElement('button');b.dataset.control=code;b.textContent=({ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↻ Rotate',Space:'⇊ Drop'})[code];b.onclick=()=>action(code);document.querySelector('.controls').append(b);}
+const controls=document.querySelector('.controls');
+if(wall){controls.innerHTML='<div class="wall-trackpad" role="slider" aria-label="Move paddle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"><i></i></div>';}
+else for(const code of bindings){const b=document.createElement('button');b.dataset.control=code;b.textContent=({ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↻ Rotate',Space:'⇊ Drop'})[code];b.onclick=()=>action(code);controls.append(b);}
 onkeydown=e=>{if(state==='play'&&bindings.includes(e.code)){e.preventDefault();keys.add(e.code);if(!wall)action(e.code);}};onkeyup=e=>keys.delete(e.code);
 function aimPaddle(e){if(wall){const r=canvas.getBoundingClientRect();paddle=Math.max(32,Math.min(368,(e.clientX-r.left)*400/r.width));}}
 canvas.onpointermove=canvas.onpointerdown=aimPaddle;
+const wallTrackpad=document.querySelector('.wall-trackpad');
+if(wallTrackpad){
+ const knob=wallTrackpad.querySelector('i');
+ function trackPaddle(e){
+  const r=wallTrackpad.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  paddle=32+ratio*336;knob.style.left=`${ratio*100}%`;wallTrackpad.setAttribute('aria-valuenow',String(Math.round(ratio*100)));
+ }
+ wallTrackpad.onpointerdown=e=>{e.preventDefault();wallTrackpad.setPointerCapture(e.pointerId);trackPaddle(e);};
+ wallTrackpad.onpointermove=e=>{if(wallTrackpad.hasPointerCapture(e.pointerId))trackPaddle(e);};
+ wallTrackpad.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();action(e.key);knob.style.left=`${(paddle-32)/336*100}%`;}};
+}
 const play=document.querySelector('#play');play.onclick=()=>{if(state==='play'){state='paused';play.textContent='Resume';}else{if(state!=='paused')reset();state='play';play.textContent='Pause';}};
 onblur=()=>{keys.clear();if(state==='play')play.click();};reset();requestAnimationFrame(frame);
 

@@ -95,7 +95,7 @@ function shoot(){
  }}
 }
 function missile(){if(state!=='flight'||missiles<=0)return;missiles--;rockets.push({sx:player.x,sy:player.y,x:aim.x,y:aim.y,t:0});tone(270,55,.28,'sawtooth');}
-canvas.oncontextmenu=e=>e.preventDefault();$('#missile').onclick=missile;
+canvas.oncontextmenu=e=>e.preventDefault();$('#missile').onclick=e=>{if(!e.detail)missile();};
 function updateMissiles(dt){
  for(const r of rockets){r.t+=dt/.32;if(r.t>=1){const radiusPx=Math.min(width,height)*.22;
  blasts.push({x:r.x,y:r.y,life:.35,radius:radiusPx});tone(140,28,.3,'sawtooth');
@@ -174,8 +174,20 @@ stick.onpointerdown=e=>{e.preventDefault();stick.setPointerCapture(e.pointerId);
 stick.onpointermove=e=>{if(stick.hasPointerCapture(e.pointerId))moveStick(e);};
 stick.onlostpointercapture=stick.onpointercancel=stick.onpointerup=releaseStick;
 const fire=$('#fire');
-fire.onpointerdown=e=>{e.preventDefault();fire.setPointerCapture(e.pointerId);held=true;if(shotDelay<=0)shoot();};
-fire.onlostpointercapture=fire.onpointercancel=fire.onpointerup=()=>{held=false;};
+function aimPad(pad,e){
+ const r=pad.getBoundingClientRect(),x=clamp((e.clientX-r.left-r.width/2)/(r.width*.38),-1,1),y=clamp((e.clientY-r.top-r.height/2)/(r.height*.38),-1,1);
+ aim={x:clamp(.5+x*.48,.03,.97),y:clamp(.5+y*.48,.03,.97)};
+ const knob=pad.querySelector('span');if(knob)knob.style.transform=`translate(${x*22}px,${y*22}px)`;
+}
+function resetAimPad(pad){const knob=pad.querySelector('span');if(knob)knob.style.transform='translate(0,0)';}
+fire.onpointerdown=e=>{e.preventDefault();fire.setPointerCapture(e.pointerId);aimPad(fire,e);held=true;if(shotDelay<=0)shoot();};
+fire.onpointermove=e=>{if(fire.hasPointerCapture(e.pointerId))aimPad(fire,e);};
+fire.onlostpointercapture=fire.onpointercancel=fire.onpointerup=()=>{held=false;resetAimPad(fire);};
+const missilePad=$('#missile');
+let missileAiming=false;
+missilePad.onpointerdown=e=>{e.preventDefault();missileAiming=true;missilePad.setPointerCapture(e.pointerId);aimPad(missilePad,e);};
+missilePad.onpointermove=e=>{if(missilePad.hasPointerCapture(e.pointerId))aimPad(missilePad,e);};
+missilePad.onlostpointercapture=missilePad.onpointercancel=missilePad.onpointerup=()=>{if(!missileAiming)return;missileAiming=false;if(state==='flight')missile();resetAimPad(missilePad);};
 overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to steer, mouse to aim, hold left click to fire, right-click for a blast missile. On touchscreens, steer with the pad and hold a target to fire.','Launch flight',restart);
 leaderboard();requestAnimationFrame(frame);
 

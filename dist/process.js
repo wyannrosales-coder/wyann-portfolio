@@ -30,6 +30,11 @@
       <div class="process-hint" aria-hidden="true"><span></span>Scroll</div>
       <div class="process-steps"></div>
       <ol class="process-rail" aria-label="Process steps"></ol>
+      <div class="process-mobile-nav" aria-label="Process step controls">
+        <button type="button" class="process-prev" aria-label="Previous process step">&#8249;</button>
+        <div class="process-dots" aria-label="Choose a process step"></div>
+        <button type="button" class="process-next-mobile" aria-label="Next process step">&#8250;</button>
+      </div>
       <div class="process-outro">
         <p class="eyebrow">What&rsquo;s next</p>
         <h2>Now, let&rsquo;s build yours.</h2>
@@ -42,6 +47,7 @@
   const $ = sel => section.querySelector(sel);
   const canvas = $('.process-canvas'), scroller = $('.process-scroller'), track = $('.process-track');
   const heroCopy = $('.process-hero'), hint = $('.process-hint'), stepsEl = $('.process-steps'), railEl = $('.process-rail'), outro = $('.process-outro');
+  const mobilePrev = $('.process-prev'), mobileNext = $('.process-next-mobile'), mobileDots = $('.process-dots');
   const homeBack = document.querySelector('.home-back');
   const copy = screen.querySelector('.copy'), thoughts = screen.querySelector('.thoughts');
 
@@ -547,7 +553,26 @@
   railEl.innerHTML = proc.steps.map(st => `<li><button type="button" aria-label="${st.name}" title="${st.name}"></button></li>`).join('');
   railBtns = [...railEl.querySelectorAll('button')];
   railBtns.forEach((b, i) => b.addEventListener('click', () => goTo(i + 0.5)));
+  mobileDots.innerHTML = proc.steps.map((st,i) => `<button type="button" aria-label="Go to ${st.name}" data-step="${i}"></button>`).join('');
+  const dotBtns = [...mobileDots.querySelectorAll('button')];
+  dotBtns.forEach((b,i) => b.addEventListener('click', () => goTo(i + 0.5)));
   $('.process-start').addEventListener('click', () => goTo(0.5));
+  let activeStep = -1;
+  function mobileStep(delta){
+    const next = Math.max(-1, Math.min(N, activeStep + delta));
+    if(next < 0) scroller.scrollTo({top:0,behavior:reduced()?'auto':'smooth'});
+    else if(next >= N) goTo(N + 0.65);
+    else goTo(next + 0.5);
+  }
+  mobilePrev.addEventListener('click', () => mobileStep(-1));
+  mobileNext.addEventListener('click', () => mobileStep(1));
+  let swipeStart = null;
+  section.addEventListener('pointerdown', e => { if(e.pointerType === 'touch' && !e.target.closest('button,a')) swipeStart={x:e.clientX,y:e.clientY}; }, {passive:true});
+  section.addEventListener('pointerup', e => {
+    if(!swipeStart || e.pointerType !== 'touch') return;
+    const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;swipeStart=null;
+    if(Math.abs(dx)>48 && Math.abs(dx)>Math.abs(dy)*1.25) mobileStep(dx<0?1:-1);
+  }, {passive:true});
 
   // formation pair + blend for a given position q along the steps
   function formAt(q){
@@ -576,6 +601,10 @@
     });
     railEl.style.opacity = (sat((q + 0.2) / 0.3) * sat((N - 0.1 - q) / 0.3)).toFixed(3);
     railBtns.forEach((b, i) => { b.classList.toggle('on', i === active); b.setAttribute('aria-current', i === active ? 'step' : 'false'); });
+    activeStep = active >= 0 ? active : (q > N ? N : -1);
+    dotBtns.forEach((b,i)=>b.classList.toggle('on',i===active));
+    mobilePrev.disabled = active < 0;
+    mobileNext.disabled = q > N + 0.3;
     const outroO = sstep(N + 0.25, N + 0.75, q);
     outro.style.opacity = outroO.toFixed(3);
     outro.classList.toggle('live', outroO > 0.6);
@@ -858,8 +887,8 @@
         L.s1 = s * 0.92; L.x1 = -visW * 0.2;  L.y1 = -0.04 * s;
       } else {
         const s = Math.min(visW * 0.9 / 2.8, visH * 0.42 / 2.0);
-        L.s0 = s;        L.x0 = 0; L.y0 = -visH * 0.16;
-        L.s1 = s * 0.72; L.x1 = 0; L.y1 = visH * 0.2;
+        L.s0 = s * 0.88; L.x0 = 0; L.y0 = visH * 0.2;
+        L.s1 = s * 0.74; L.x1 = 0; L.y1 = visH * 0.2;
       }
     }
 
@@ -872,6 +901,10 @@
       mouse.on = 1;
     }, { passive:true });
     section.addEventListener('pointerleave', () => { mouse.on = 0; });
+    document.addEventListener('wyann:gyro', e => {
+      if(innerWidth > 760) return;
+      mouse.x = e.detail.x; mouse.y = -e.detail.y; mouse.on = 1;
+    });
 
     const clock = new THREE.Clock();
     let raf = 0, running = false, mouseOn = 0, lastTrail = 0, Ts = 0;

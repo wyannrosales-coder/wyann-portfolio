@@ -8,9 +8,11 @@ nav{z-index:15}nav a,nav button,.controls button,#play,#missile,#fire,.back{min-
  #stick{display:grid;position:static;inset:auto;place-items:center;width:116px;height:116px;border:2px solid #aaffff99;border-radius:50%;background:#152842aa;box-shadow:inset 0 0 24px #4fffd530;touch-action:none;pointer-events:auto;user-select:none}
  #stick span{width:52px;height:52px;border-radius:50%;background:#b8fff0bb;border:2px solid #fff;box-shadow:0 5px 18px #0008;transition:transform .08s linear}
  .fire-controls{display:flex;align-items:flex-end;gap:14px;pointer-events:auto}
- .fire-controls button{display:grid;place-items:center;width:92px;height:92px;border-radius:50%;padding:5px;font-weight:800;background:#df5c79;color:white;box-shadow:inset 0 -7px #802d45,0 6px 18px #0008;touch-action:none}
- .fire-controls #missile{display:grid;position:static;inset:auto;width:76px;height:76px;background:#e5ad43;color:#17110a;box-shadow:inset 0 -7px #9b6923,0 6px 18px #0008}
- .fire-controls small{display:block;font-size:8px;font-weight:400;line-height:1}
+ .fire-controls button{position:relative;display:grid;place-items:center;width:104px;height:104px;border-radius:50%;padding:5px;font-weight:800;background:#54283caa;color:white;border:2px solid #ff8ea999;box-shadow:inset 0 0 24px #ff5b8430,0 6px 18px #0008;touch-action:none;overflow:visible}
+ .fire-controls #missile{display:grid;position:relative;inset:auto;width:92px;height:92px;background:#4b3b1daa;color:#ffe2a2;border-color:#ffd06f99;box-shadow:inset 0 0 22px #ffc35c30,0 6px 18px #0008}
+ .fire-controls button>span{width:44px;height:44px;border-radius:50%;background:#ff7896;border:2px solid #fff;box-shadow:0 5px 14px #0009;transition:transform .05s linear;pointer-events:none}
+ .fire-controls #missile>span{width:38px;height:38px;background:#f4bd4f}
+ .fire-controls small{position:absolute;left:0;right:0;bottom:-16px;display:block;font-size:9px;font-weight:700;line-height:1;letter-spacing:.08em;pointer-events:none}
 }
 @media(max-width:760px),(max-height:520px){
  nav{top:max(5px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left));right:max(6px,env(safe-area-inset-right));align-items:flex-start}
@@ -18,7 +20,7 @@ nav{z-index:15}nav a,nav button,.controls button,#play,#missile,#fire,.back{min-
  .cabinet{height:100dvh;max-width:none;padding:max(6px,env(safe-area-inset-top)) 10px max(8px,env(safe-area-inset-bottom));display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto auto;overflow:hidden}.cabinet h1{font-size:22px;margin:2px}.cabinet p{font-size:12px;margin:2px}.cabinet canvas{width:auto;height:100%;min-height:0;max-height:none;margin:2px auto}.controls button{padding:8px 12px}
  .cabinet .controls{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(100%,460px);margin:auto}.cabinet .controls button{height:58px;border-radius:16px;font-size:18px;font-weight:700}
  .blocks-game .controls button[data-control="ArrowLeft"]{grid-column:1}.blocks-game .controls button[data-control="ArrowRight"]{grid-column:2}.blocks-game .controls button[data-control="ArrowUp"]{grid-column:3}.blocks-game .controls button[data-control="Space"]{grid-column:4;background:#b5ffdf;color:#071421}
- .wall-game .controls{grid-template-columns:1fr 1fr}.wall-game .controls button{height:64px;font-size:25px}
+ .wall-game .controls{display:block;width:min(92vw,460px)}.wall-trackpad{position:relative;width:100%;height:72px;border:1px solid #91f6eeaa;border-radius:20px;background:linear-gradient(90deg,#14233a,#203b4a,#14233a);touch-action:none;overflow:hidden}.wall-trackpad::before{content:'DRAG TO MOVE';position:absolute;inset:0;display:grid;place-items:center;font:11px monospace;letter-spacing:.16em;color:#d9fffa88}.wall-trackpad i{position:absolute;top:10px;left:50%;width:64px;height:50px;border-radius:14px;background:#91f6ee;box-shadow:0 5px 14px #0008;transform:translateX(-50%);pointer-events:none}
 }
 @media(any-pointer:coarse) and (orientation:portrait){.vector-game .rotate-device{display:grid;position:fixed;inset:0;z-index:40;place-items:center;padding:25vw;text-align:center;background:#070c20;color:#b5ffdf;font:bold 22px/1.35 monospace}}
 @media(any-pointer:coarse) and (orientation:landscape){.vector-game section{max-height:calc(100dvh - 50px);top:54%}.vector-game nav{font-size:11px}.vector-game nav a,.vector-game nav button{padding:6px 10px}.vector-game canvas{height:100dvh}}

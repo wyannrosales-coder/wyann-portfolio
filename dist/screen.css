@@ -28,6 +28,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px das
   border: 2px solid #0b0d0b;
   box-shadow: 0 0 0 8px #050605, 0 0 0 10px #49474165, 0 4px 20px 13px #000a;
   background: radial-gradient(ellipse at 10% 7%, #24364c, transparent 45%), radial-gradient(ellipse at 66% 70%, #202b37, #131920 65%, #181d24);
+  --gyro-bg-x:0px;--gyro-bg-y:0px;
 }
 header {
   display: grid;
@@ -226,6 +227,8 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 .screen {
   background:linear-gradient(90deg,#04061594,#0406153d 70%),url(channel-0.webp) center / cover;
   background-image:linear-gradient(90deg,#04061594,#0406153d 70%),var(--channel-art,url(channel-0.webp));
+  background-position:center,calc(50% + var(--gyro-bg-x)) calc(50% + var(--gyro-bg-y));
+  background-size:auto,calc(100% + 28px) calc(100% + 28px);
 }
 .picture {mix-blend-mode:normal;}
 .channel-picker {
@@ -763,7 +766,7 @@ body.reading-project{overflow:hidden;}
  .coverflow-controls span{font:11px monospace;color:#d6d9e3;}
  .case-nav{padding-top:max(14px,env(safe-area-inset-top));}.case-nav .pill{min-height:44px;}
  .case-shell .case-study{padding-bottom:max(70px,env(safe-area-inset-bottom));}
- .crawling #case-content{transform:perspective(1400px) rotateX(12deg) scale(.985);}
+ .crawling #case-content{transform:perspective(900px) rotateX(58deg) scale(.9);}
  .case-shell #case-content{transition-duration:.45s;}
  .lightbox-toolbar .pill,.lightbox-controls .pill{min-height:44px;}
 }
