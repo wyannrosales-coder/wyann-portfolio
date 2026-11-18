@@ -64,7 +64,7 @@ document.querySelector('#copy-message').addEventListener('click', async () => {
 const picture = document.querySelector('.picture');
 const portraits = Array.from({length: 9}, (_, index) => {
   const image = new Image();
-  image.src = 'portrait-' + index + '.webp';
+  image.src = 'portrait-' + index + '.webp?v=smile1';
   return image;
 });
 const face = document.createElement('img');
@@ -131,7 +131,7 @@ const variants = {};
 for (const effect of ['grain', 'bleed']) {
   variants[effect] = portraits.map((_, index) => {
     const image = new Image();
-    image.src = effect + '-' + index + '.webp';
+    image.src = effect + '-' + index + '.webp?v=smile1';
     return image;
   });
 }
@@ -171,3 +171,17 @@ function restartGlitches() {
 motion.addEventListener('change', restartGlitches);
 document.addEventListener('visibilitychange', restartGlitches);
 restartGlitches();
+
+const channel = document.querySelector('#channel');
+function tuneBackground() {
+  screen.style.setProperty('--channel-art', `url(channel-${channel.value}.webp)`);
+}
+try {
+  const saved = localStorage.getItem('inframe-channel');
+  if (saved && /^[0-4]$/.test(saved)) channel.value = saved;
+} catch {}
+tuneBackground();
+channel.addEventListener('change', () => {
+  tuneBackground();
+  try { localStorage.setItem('inframe-channel',channel.value); } catch {}
+});
