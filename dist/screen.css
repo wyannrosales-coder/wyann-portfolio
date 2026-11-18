@@ -218,3 +218,12 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 .picture { background: none; }
 .picture::after { content: none; }
 .picture img { display:block; width:100%; height:100%; transform-origin:50% 100%; pointer-events:none; }
+.glitch-band { position:absolute; inset:0; overflow:hidden; display:none; pointer-events:none; }
+.glitch-band:is([data-effect="tear"],[data-effect="grain"],[data-effect="bleed"]) { display:block; }
+.glitch-band[data-effect="tear"] img { translate:var(--tear) 0; }
+.glitch-band[data-effect="grain"] img { filter:url(#static-grain); }
+.glitch-band[data-effect="bleed"] img { filter:url(#color-slip); }
+.glass::after {
+  background:linear-gradient(to bottom,transparent,#e6e7b51a 48%,#0002 54%,transparent) 0 calc(var(--beam,-80px) - 16px) / 100% 32px no-repeat;
+  animation:glass-flicker 4s steps(1) infinite;
+}

@@ -71,7 +71,11 @@ const face = document.createElement('img');
 face.alt = '';
 face.draggable = false;
 face.src = portraits[3].src;
-picture.append(face);
+const band = document.createElement('div');
+band.className = 'glitch-band';
+const slice = face.cloneNode();
+band.append(slice);
+picture.append(face, band);
 let x = 0, y = 4, bodyX = 0, bodyY = 4;
 let targetX = x, targetY = y, last = 0, frame = 0;
 let column = 0, row = 1;
@@ -84,9 +88,11 @@ function paint() {
   row = sector(y, row);
   const portrait = portraits[row * 3 + column];
   if (portrait.complete && portrait.naturalWidth && face.src !== portrait.src) face.src = portrait.src;
+  if (slice.src !== face.src) slice.src = face.src;
   const yaw = (bodyX - 4) / 4;
   const pitch = (bodyY - 4) / 4;
   face.style.transform = `translateX(${yaw * .55}%) rotate(${yaw * .85}deg) scaleY(${1 - pitch * .006})`;
+  slice.style.transform = face.style.transform;
 }
 function render(now) {
   const dt = Math.min(50, now-last || 16);
@@ -119,3 +125,44 @@ screen.addEventListener('pointermove', follow);
 screen.addEventListener('pointerleave', event => {
   if (event.pointerType !== 'touch') turn(0, 4);
 });
+
+// The glass highlight and cropped portrait copy share one vertical coordinate.
+const glass = document.querySelector('.glass');
+let sweepFrame = 0;
+let sweepTimer = 0;
+function sweep() {
+  if (motion.matches || document.hidden) return;
+  const effect = ['tear', 'grain', 'bleed', 'quiet'][Math.floor(Math.random() * 4)];
+  const duration = 1100 + Math.random() * 1700;
+  const start = performance.now();
+  band.dataset.effect = effect;
+  band.style.setProperty('--tear', Math.random() < .5 ? '-3px' : '3px');
+  function advance(now) {
+    const progress = (now - start) / duration;
+    if (progress >= 1) {
+      glass.style.removeProperty('--beam');
+      band.removeAttribute('data-effect');
+      sweepTimer = setTimeout(sweep, 350 + Math.random() * 3100);
+      return;
+    }
+    const bounds = glass.getBoundingClientRect();
+    const portrait = picture.getBoundingClientRect();
+    const position = (1 - progress) * (bounds.height + 32) - 16;
+    const local = bounds.top + position - portrait.top;
+    glass.style.setProperty('--beam', position + 'px');
+    band.style.clipPath = 'inset(' + Math.max(0, local - 4) + 'px 0 ' +
+      Math.max(0, portrait.height - local - 4) + 'px 0)';
+    sweepFrame = requestAnimationFrame(advance);
+  }
+  advance(start);
+}
+function restartSweep() {
+  clearTimeout(sweepTimer);
+  cancelAnimationFrame(sweepFrame);
+  band.removeAttribute('data-effect');
+  glass.style.removeProperty('--beam');
+  sweep();
+}
+motion.addEventListener('change', restartSweep);
+document.addEventListener('visibilitychange', restartSweep);
+sweep();
