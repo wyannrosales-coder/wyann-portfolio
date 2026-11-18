@@ -62,39 +62,50 @@ document.querySelector('#copy-message').addEventListener('click', async () => {
 });
 
 const picture = document.querySelector('.picture');
-const poses = Array.from({ length: 9 }, (_, index) => {
-  const frame = new Image();
-  frame.src = 'pose-' + index + '.webp';
-  return frame;
+const strips = Array.from({length: 9}, (_, i) => {
+  const image = new Image();
+  image.src = 'gaze-' + i + '.webp';
+  return image;
 });
-let current = 3;
-function showPose(index) {
-  if (current === index) return;
-  current = index;
-  picture.style.backgroundImage = 'url(' + poses[index].src + ')';
-  if (!motion.matches) {
-    picture.getAnimations({subtree:true}).forEach(animation => animation.cancel());
-    picture.animate([
-      {transform:'translateX(4px)',clipPath:'inset(20% 0 77%)'},
-      {transform:'translateX(-2px)',clipPath:'inset(64% 0 32%)'}
-    ], {duration:80, easing:'steps(2)', pseudoElement:'::after'});
+let x = 0, y = 4, startX = x, startY = y, targetX = x, targetY = y;
+let began = 0, frame = 0;
+function render(now) {
+  const t = motion.matches ? 1 : Math.min(1, (now - began) / 180);
+  const ease = t * (2 - t);
+  x = startX + (targetX - startX) * ease;
+  y = startY + (targetY - startY) * ease;
+  const strip = strips[Math.round(y)];
+  if (strip.naturalWidth) {
+    picture.style.backgroundImage = 'url(' + strip.src + ')';
+    picture.style.backgroundSize = '900% 100%';
+    picture.style.backgroundPosition = (Math.round(x) * 12.5) + '% center';
   }
+  frame = t < 1 ? requestAnimationFrame(render) : 0;
+}
+strips.forEach(strip => strip.addEventListener('load', () => {
+  if (!frame) render(performance.now());
+}));
+function turn(col, row) {
+  if (col === targetX && row === targetY) return;
+  startX = x; startY = y;
+  targetX = col; targetY = row;
+  began = performance.now();
+  if (!frame) frame = requestAnimationFrame(render);
 }
 function follow(event) {
-  const box = picture.getBoundingClientRect();
-  const horizontal = event.clientX - (box.left + box.width / 2);
-  const vertical = event.clientY - (box.top + box.height * .36);
-  const radius = Math.hypot(horizontal, vertical);
-  const center = box.width * (current === 4 ? .095 : .075);
-  if (radius < center) return showPose(4);
-  const directions = [5, 8, 7, 6, 3, 0, 1, 2];
-  const angle = Math.atan2(vertical, horizontal) / (Math.PI / 4);
-  const previous = directions.indexOf(current);
-  if (previous >= 0 && Math.abs(((angle - previous + 12) % 8) - 4) < .58) return;
-  showPose(directions[(Math.round(angle) + 8) % 8]);
+  const b = picture.getBoundingClientRect();
+  const dx = event.clientX - b.left - b.width * .5;
+  const dy = event.clientY - b.top - b.height * .235;
+  if (Math.hypot(dx, dy) < b.width * .07) return turn(4, 4);
+  const angle = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4;
+  turn(4 + 4 * Math.round(Math.cos(angle)), 4 + 4 * Math.round(Math.sin(angle)));
 }
+screen.addEventListener('pointerdown', event => {
+  follow(event);
+  if (event.pointerType === 'touch' && event.target === picture)
+    picture.setPointerCapture(event.pointerId);
+});
 screen.addEventListener('pointermove', follow);
-screen.addEventListener('pointerdown', follow);
 screen.addEventListener('pointerleave', event => {
-  if (event.pointerType !== 'touch') showPose(3);
+  if (event.pointerType !== 'touch') turn(0, 4);
 });

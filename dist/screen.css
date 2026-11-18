@@ -185,3 +185,32 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 @keyframes tube-flicker { 0%, 70%, 74%, 100% {filter: brightness(1)} 69%, 73% {filter: brightness(.963)} }
 @media (hover:hover) { .screen:hover .pointer { visibility:hidden; } }
 @media(max-width:760px) { .picture { inset: 14% -2% auto auto; width: 90%; height:auto; } }
+.set {
+  padding: clamp(18px,3.6vh,42px) clamp(20px,4.2vw,78px);
+  box-shadow: inset 2px 3px 6px #79766a54, inset -3px -4px 9px #000;
+}
+.screen {
+  border-radius: 47% 47% 44% 44% / 5.8% 5.8% 5.6% 5.6%;
+  border: 5px solid #080907;
+  box-shadow: 0 0 0 7px #050604, 0 3px 5px 10px #4948417a, 0 0 20px 11px #000b;
+  filter: url(#tube-curve);
+  animation: none;
+}
+.picture {
+  inset: auto 0 0 auto;
+  width: min(54%, 87vh);
+  height: auto;
+  aspect-ratio: 1;
+  background: url(rest.webp) center / 100% 100% no-repeat;
+  touch-action: pan-y pinch-zoom;
+}
+.glass { border-radius: inherit; }
+.glass::after { animation: scan-roll 4.4s linear infinite, glass-flicker 4s steps(1) infinite; }
+@keyframes glass-flicker { 0%,72%,75%,100% { opacity:1; } 71%,74% { opacity:.45; } }
+@media(max-width:760px) {
+  .set {padding:16px;}
+  .screen {display:flex;flex-direction:column;border-radius:9% / 4%;}
+  .picture {position:relative;order:1;inset:auto;width:min(90%,440px);align-self:center;margin:10px 0 0;mask-image:linear-gradient(black 84%,transparent);}
+  header {order:0;}
+  .copy {order:2;align-self:stretch;padding:0 0 36px;}
+}
