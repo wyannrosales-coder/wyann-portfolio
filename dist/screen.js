@@ -205,6 +205,8 @@ function showPose(i) {
 function changeSection(open) {
   if (open === showingAbout) return;
   showingAbout = open;
+  document.querySelector('.home-back').hidden = !open;
+  if (!open) window.scrollTo({top:0, behavior:'instant'});
   document.querySelector('.thoughts').inert = open;
   clearTimeout(poseTimer);
   screen.classList.toggle('in-about',open);
@@ -316,3 +318,6 @@ document.addEventListener('pointerdown', event => {
 about.addEventListener('scroll', () => {
   about.classList.toggle('cv-scrolled', about.scrollTop > 20);
 }, {passive:true});
+
+document.querySelector('.home-back').addEventListener('click', () => changeSection(false));
+document.querySelector('.back-bottom').addEventListener('click', () => changeSection(false));

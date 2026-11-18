@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Meet Wyann Rosales, a creative designer and developer.">
 <title>inframe® — Wyann Rosales</title>
-<link rel="stylesheet" href="screen.css?v=mobile-tight">
-<script src="screen.js?v=mobile-tight" defer></script>
+<link rel="stylesheet" href="screen.css?v=about-flow">
+<script src="screen.js?v=about-flow" defer></script>
 </head>
 <body>
 <svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
@@ -40,9 +40,9 @@
     <div class="copy"><h1 id="intro">Hey, I’m Wyann.</h1><p>UX/UI &amp; Product Designer</p></div>
     <section id="about" aria-labelledby="about-name" tabindex="0" inert>
       <div class="bio">
-        <p class="eyebrow">About me · Melbourne, Australia</p>
+        <div class="bio-heading"><p class="eyebrow">About me · Melbourne, Australia</p>
         <h2 id="about-name">Wyann Rosales</h2>
-        <p class="role">Digital Development Manager &amp; UX/UI Lead</p>
+        <p class="role">Digital Development Manager &amp; UX/UI Lead</p></div>
         <p>I design digital products for the web, iOS and Android. At Centurion, I led the Dwell app from the initial UX research through launch and adoption tracking.</p>
       </div>
       <div class="career"><h3>Experience</h3>
@@ -61,9 +61,10 @@
         <h3>Skills &amp; education</h3>
         <p>Systems design, responsive web design, wireframing, UX research and product management.</p>
         <p><b>BA in Multimedia Arts</b><br>De La Salle College of St. Benilde · 2007–2011</p>
-        <a href="https://www.linkedin.com/in/wyannrosales/">Full profile on LinkedIn ↗</a>
+        <a href="https://www.linkedin.com/in/wyannrosales/">Full profile on LinkedIn ↗</a><p><button class="pill back-bottom">← Back to home</button></p>
       </div>
     </section>
+    <button class="pill home-back" hidden>← Home</button>
     <button class="pill section-switch" aria-controls="about" aria-expanded="false">About me →</button>
     <div class="pointer" aria-hidden="true"></div>
 
@@ -71,7 +72,7 @@
   </section>
 </main>
 <dialog aria-labelledby="panel-title">
-  <form method="dialog"><button class="close" aria-label="Close">×</button></form>
+  <form method="dialog"><button class="dialog-back">← Home</button><button class="close" aria-label="Close">×</button></form>
   <h2 id="panel-title"></h2>
   <p id="panel-description"></p>
   <div id="panel-actions"></div>
