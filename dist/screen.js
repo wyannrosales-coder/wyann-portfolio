@@ -241,7 +241,7 @@ function changeSection(open) {
 }
 switcher.addEventListener('click',()=>changeSection(!showingAbout));
 screen.addEventListener('wheel',event=>{
-  if (screen.classList.contains('in-portfolio') || event.ctrlKey || event.target.closest('select,dialog')) return;
+  if (screen.classList.contains('in-portfolio') || screen.classList.contains('in-process') || event.ctrlKey || event.target.closest('select,dialog')) return;
   const horizontal=Math.abs(event.deltaX)>Math.abs(event.deltaY);
   if (showingAbout && !horizontal) {
     if (!about.contains(event.target)) {
@@ -254,6 +254,7 @@ screen.addEventListener('wheel',event=>{
   if (!horizontal && (innerWidth<=760 || document.documentElement.scrollHeight>innerHeight+8)) return;
   const delta=horizontal ? event.deltaX : event.deltaY;
   if (Math.abs(delta)<3) return;
+  if (!showingAbout) return; // scrolling on home never opens About me
   event.preventDefault();
   const now=performance.now();
   if(now>wheelLock) changeSection(delta>0);
@@ -264,9 +265,9 @@ screen.addEventListener('touchstart',event=>{
   swipeStart=event.target.closest('select,button,a,.picture') ? null : event.changedTouches[0];
 },{passive:true});
 screen.addEventListener('touchend',event=>{
-  if (!swipeStart || screen.classList.contains('in-portfolio')) return;
+  if (!swipeStart || screen.classList.contains('in-portfolio') || screen.classList.contains('in-process')) return;
   const end=event.changedTouches[0], dx=end.clientX-swipeStart.clientX;
-  if(Math.abs(dx)>55 && Math.abs(dx)>1.6*Math.abs(end.clientY-swipeStart.clientY)) changeSection(dx<0);
+  if(Math.abs(dx)>55 && Math.abs(dx)>1.6*Math.abs(end.clientY-swipeStart.clientY) && (showingAbout || dx>0)) changeSection(dx<0); // swiping on home never opens About me
   swipeStart=null;
 },{passive:true});
 
