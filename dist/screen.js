@@ -293,24 +293,8 @@ thoughts.addEventListener('click', event => {
     if (bubble.id === 'open-about') changeSection(true);
     else if (bubble.id === 'open-portfolio') window.openPortfolio();
     else if (bubble.href) location.assign(bubble.href);
-    else if (bubble.id === 'playground') {
-      openPanel('Playground');
-      for (const [effect,label] of [['tear','Tracking tear'],['grain','Static'],['bleed','Color bleed']]) {
-        const button = document.createElement('button');
-        button.className = 'pill';
-        button.textContent = label;
-        button.onclick = () => {
-          dialog.close();
-          clearTimeout(glitchTimer);
-          band.style.clipPath = 'inset(40% 0 48% 0)';
-          band.style.setProperty('--tear','12px');
-          band.dataset.effect = effect;
-          syncSlice();
-          glitchTimer = setTimeout(restartGlitches, 650);
-        };
-        actions.append(button);
-      }
-    } else openPanel(bubble.dataset.panel);
+    else if (bubble.id === 'playground') location.assign('arcade.html');
+    else openPanel(bubble.dataset.panel);
   }, motion.matches ? 60 : 420);
 });
 document.addEventListener('pointerdown', event => {
