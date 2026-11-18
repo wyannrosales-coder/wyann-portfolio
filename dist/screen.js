@@ -185,3 +185,60 @@ channel.addEventListener('change', () => {
   tuneBackground();
   try { localStorage.setItem('inframe-channel',channel.value); } catch {}
 });
+
+const about = document.querySelector('#about');
+const copy = document.querySelector('.copy');
+const switcher = document.querySelector('.section-switch');
+const poses = Array.from({length:3}, (_,i) => {
+  const image = new Image();
+  image.className = 'pose'; image.alt = ''; image.src = 'chin-' + i + '.webp';
+  picture.append(image); return image;
+});
+let showingAbout = false, poseTimer, wheelLock = 0;
+let introChannel = channel.value, aboutChannel;
+function showPose(i) {
+  poses.forEach((pose,index) => pose.classList.toggle('visible',index === i));
+}
+function changeSection(open) {
+  if (open === showingAbout) return;
+  showingAbout = open;
+  clearTimeout(poseTimer);
+  screen.classList.toggle('in-about',open);
+  about.inert = !open; copy.inert = open;
+  switcher.textContent = open ? '← Intro' : 'About me →';
+  switcher.setAttribute('aria-expanded',String(open));
+  if (open) {
+    introChannel = channel.value;
+    channel.value = aboutChannel && aboutChannel !== introChannel ? aboutChannel : String((Number(introChannel)+1)%5);
+    screen.classList.add('posing');
+    let step = motion.matches ? 2 : 0;
+    function lift() {showPose(step); if (step < 2) {step++; poseTimer=setTimeout(lift,175);} }
+    lift();
+  } else {
+    aboutChannel=channel.value; channel.value=introChannel;
+    screen.classList.remove('posing'); showPose(-1);
+  }
+  tuneBackground();
+}
+switcher.addEventListener('click',()=>changeSection(!showingAbout));
+screen.addEventListener('wheel',event=>{
+  if (event.ctrlKey || event.target.closest('select,dialog')) return;
+  const horizontal=Math.abs(event.deltaX)>Math.abs(event.deltaY);
+  if (!horizontal && (innerWidth<=760 || document.documentElement.scrollHeight>innerHeight+8)) return;
+  const delta=horizontal ? event.deltaX : event.deltaY;
+  if (Math.abs(delta)<3) return;
+  event.preventDefault();
+  const now=performance.now();
+  if(now>wheelLock) changeSection(delta>0);
+  wheelLock=now+180;
+},{passive:false});
+let swipeStart;
+screen.addEventListener('touchstart',event=>{
+  swipeStart=event.target.closest('select,button,a,.picture') ? null : event.changedTouches[0];
+},{passive:true});
+screen.addEventListener('touchend',event=>{
+  if (!swipeStart) return;
+  const end=event.changedTouches[0], dx=end.clientX-swipeStart.clientX;
+  if(Math.abs(dx)>55 && Math.abs(dx)>1.6*Math.abs(end.clientY-swipeStart.clientY)) changeSection(dx<0);
+  swipeStart=null;
+},{passive:true});

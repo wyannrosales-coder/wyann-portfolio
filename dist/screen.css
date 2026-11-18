@@ -239,3 +239,35 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
   .channel-picker {position:static;order:3;align-self:flex-start;margin:0 7% 26px;}
   .copy {padding-bottom:20px;}
 }
+.screen { --travel:720ms; }
+.copy { transition:transform var(--travel) ease,opacity .32s; }
+.screen.in-about .copy { transform:translateX(-115%);opacity:0; }
+.screen.in-about .pointer {visibility:hidden;}
+.picture {transition:right var(--travel) ease,width var(--travel) ease;pointer-events:auto;}
+.screen.in-about .picture {width:min(36%,65vh);right:50%;translate:50% 0;transition:right var(--travel) ease,width var(--travel) ease,translate var(--travel) ease;}
+.picture .pose {position:absolute;inset:0;visibility:hidden;}
+.screen.posing .picture > img:first-child,.screen.posing .glitch-band {visibility:hidden;}
+.picture .pose.visible {visibility:visible;}
+#about {position:absolute;inset:19% 5% 16%;z-index:2;display:flex;align-items:center;justify-content:space-between;transform:translateX(115%);opacity:0;transition:transform var(--travel) ease,opacity .5s;pointer-events:none;}
+.screen.in-about #about {transform:none;opacity:1;pointer-events:auto;}
+.bio,.career {box-sizing:border-box;width:32%;padding:clamp(15px,2vw,32px);border-radius:16px;background:#10131cf2;color:#f6f7fa;}
+.bio h2 {font-size:clamp(40px,4.6vw,78px);line-height:.91;letter-spacing:-.065em;margin:.22em 0;}
+.bio p,.career li {line-height:1.4;font-size:clamp(13px,1.1vw,17px);}
+.bio .eyebrow,.career small {font:12px/1.4 monospace;color:#bcdcf5;}
+.bio .role {font-weight:700;}
+.bio a {color:#fff;text-underline-offset:4px;}
+.career h3 {font-size:clamp(20px,2vw,32px);margin:0 0 1em;}
+.career ol {list-style:none;padding:0;margin:0;}
+.career li {border-top:1px solid #65717b;padding:.7em 0;}
+.career li>* {display:block;}
+.section-switch {position:absolute;z-index:5;right:5%;bottom:5%;background:#111724;color:white;}
+@media(max-width:760px){
+  .section-switch {position:relative;order:4;right:auto;bottom:auto;align-self:flex-end;margin:-66px 7% 27px;font-size:13px;}
+  .channel-picker {max-width:62%;font-size:11px;margin-left:5%;}
+  #about {display:none;}
+  .screen.in-about .copy {display:none;}
+  .screen.in-about .picture {position:relative;inset:auto;translate:none;width:min(78%,350px);margin:18px auto 0;align-self:center;}
+  .screen.in-about #about {display:grid;position:relative;inset:auto;order:2;margin:0 5% 20px;gap:10px;}
+  .bio,.career {width:100%;}
+  .bio h2 br {display:none;} .bio h2 br::after {content:" ";}
+}
