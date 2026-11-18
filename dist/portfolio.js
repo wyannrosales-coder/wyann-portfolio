@@ -19,7 +19,7 @@
   const next=projects[(i+1)%projects.length];nextPeek.querySelector('img').src=next.cover;nextPeek.setAttribute('aria-label','Next project: '+next.name);
   [...tiles.children].forEach((t,j)=>{t.setAttribute('aria-pressed',String(i===j));});
  }
- async function select(i){
+ async function select(i,direction=i<active?-1:1){
   if(i===active||switching||entering||!projects.length)return;switching=true;const ticket=++serial;
   const img=new Image();img.src=projects[i].cover;try{await img.decode();}catch{}
   if(ticket!==serial)return;
@@ -28,14 +28,17 @@
   const old=preview.cloneNode(true);old.className+=' departing-project';old.removeAttribute('aria-label');old.setAttribute('aria-hidden','true');old.inert=true;old.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
   preview.parentElement.append(old);render(i);
   if(reduced()){old.remove();switching=false;return;}
-  nextPeek.classList.add('waiting');
-  const out=old.animate(departure,transitionTiming);
-  const incoming=preview.animate(arrival,transitionTiming);
+  const reverse=direction<0;
+  const out=old.animate(reverse?[...arrival].reverse():departure,transitionTiming);
+  const incoming=preview.animate(reverse?departure.map(k=>({...k,offset:k.offset===undefined?undefined:1-k.offset})).reverse():arrival,transitionTiming);
+  nextPeek.getAnimations().forEach(a=>a.cancel());
+  if(!reverse)nextPeek.animate([{transform:'perspective(1200px) translate3d(24%,190%,-300px) rotateX(-48deg) rotateZ(14deg) scale(.7)'},{transform:below}],{...transitionTiming,fill:'none'});
   await Promise.all([out.finished.catch(()=>{}),incoming.finished.catch(()=>{})]);old.remove();if(ticket===serial)incoming.cancel();switching=false;nextPeek.classList.remove('waiting');
 
  }
- ready=fetch('projects.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
+ ready=fetch('projects.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(async data=>{
   projects=data;
+  await Promise.all(projects.map(async p=>{const image=new Image();image.src=p.cover;try{await image.decode();}catch{}p.preloadedCover=image;}));
   projects.forEach((p,i)=>{const b=el('button',null,'work-tile');b.type='button';b.setAttribute('aria-label','Show '+p.name);const img=el('img');img.src=p.cover;img.alt='';const label=el('span',String(i+1).padStart(2,'0')+' / '+p.name);b.append(label);b.onclick=()=>select(i);tiles.append(b);});render(0);
  }).catch(()=>{panel.querySelector('.work-error').hidden=false;});
  window.openPortfolio=async()=>{
@@ -75,7 +78,7 @@
  }
  preview.onclick=openStudy;panel.querySelector('#view-project').onclick=openStudy;
  panel.querySelectorAll('.close-case').forEach(b=>b.onclick=closeStudy);
- document.addEventListener('keydown',e=>{if(!screen.classList.contains('in-portfolio')||dialog.open)return;if(e.key==='Escape'){study.hidden?home():closeStudy();}if(study.hidden&&projects.length&&!e.target.closest('select,details')){if(e.key==='ArrowRight'){e.preventDefault();select((active+1)%projects.length);}if(e.key==='ArrowLeft'){e.preventDefault();select((active+projects.length-1)%projects.length);}}});
+ document.addEventListener('keydown',e=>{if(!screen.classList.contains('in-portfolio')||dialog.open)return;if(e.key==='Escape'){study.hidden?home():closeStudy();}if(study.hidden&&projects.length&&!e.target.closest('select,details')){if(e.key==='ArrowRight'){e.preventDefault();select((active+1)%projects.length);}if(e.key==='ArrowLeft'){e.preventDefault();select((active+projects.length-1)%projects.length,-1);}}});
  nextPeek.onclick=()=>select((active+1)%projects.length);
  let lastWheel=0,wheelAmount=0,wheelConsumed=false;
  screen.addEventListener('wheel',event=>{
@@ -85,12 +88,12 @@
   if(entering||switching){wheelConsumed=true;return;}
   if(wheelConsumed)return;
   wheelAmount+=(event.deltaMode===1?16:1)*event.deltaY;
-  if(Math.abs(wheelAmount)>45){const direction=wheelAmount>0?1:-1;wheelConsumed=true;select((active+direction+projects.length)%projects.length);}
+  if(Math.abs(wheelAmount)>45){const direction=wheelAmount>0?1:-1;wheelConsumed=true;select((active+direction+projects.length)%projects.length,direction);}
  },{passive:false});
  let start;
  gallery.addEventListener('touchstart',e=>{start=e.target.closest('.work-tiles')?null:e.changedTouches[0];},{passive:true});
  gallery.addEventListener('touchmove',e=>{if(start&&Math.abs(e.touches[0].clientY-start.clientY)>12)e.preventDefault();},{passive:false});
- gallery.addEventListener('touchend',e=>{if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.clientX,dy=t.clientY-start.clientY;const delta=Math.abs(dy)>Math.abs(dx)?dy:dx;if(Math.abs(delta)>45){e.preventDefault();select((active+(delta<0?1:projects.length-1))%projects.length);}start=null;},{passive:false});
+ gallery.addEventListener('touchend',e=>{if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.clientX,dy=t.clientY-start.clientY;const delta=Math.abs(dy)>Math.abs(dx)?dy:dx;if(Math.abs(delta)>45){e.preventDefault();select((active+(delta<0?1:projects.length-1))%projects.length,delta<0?1:-1);}start=null;},{passive:false});
  let parallaxFrame=0,px=0,py=0,tx=0,ty=0;
  function parallax(){px+=(tx-px)*.09;py+=(ty-py)*.09;gallery.style.setProperty('--drift-x',px+'px');gallery.style.setProperty('--drift-y',py+'px');gallery.style.setProperty('--tilt-x',(-py*.18)+'deg');gallery.style.setProperty('--tilt-y',(px*.15)+'deg');parallaxFrame=Math.abs(tx-px)+Math.abs(ty-py)>.05?requestAnimationFrame(parallax):0;}
  function drift(x,y){tx=x;ty=y;if(!parallaxFrame)parallaxFrame=requestAnimationFrame(parallax);}

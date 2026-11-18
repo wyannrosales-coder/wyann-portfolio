@@ -650,3 +650,7 @@ header {display:flex;justify-content:flex-end;}
 .work-preview{touch-action:none;}
 .work-tiles{touch-action:pan-x;}
 @media(prefers-reduced-motion:reduce){.project-panorama{transform:none;}.work-heading,.work-tiles{translate:none;}}
+/* Apply tube displacement once at the screen, never again at the card edge. */
+.project-panorama{filter:none;isolation:isolate;clip-path:inset(0 round 7% / 5%);}
+.project-panorama img{display:block;}
+.project-panorama::after{box-shadow:inset 0 0 18px #0002;}
