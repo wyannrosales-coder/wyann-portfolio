@@ -243,7 +243,7 @@ function changeSection(open) {
 }
 switcher.addEventListener('click',()=>changeSection(!showingAbout));
 screen.addEventListener('wheel',event=>{
-  if (event.ctrlKey || event.target.closest('select,dialog')) return;
+  if (screen.classList.contains('in-portfolio') || event.ctrlKey || event.target.closest('select,dialog')) return;
   const horizontal=Math.abs(event.deltaX)>Math.abs(event.deltaY);
   if (showingAbout && !horizontal) {
     if (!about.contains(event.target)) {
@@ -266,7 +266,7 @@ screen.addEventListener('touchstart',event=>{
   swipeStart=event.target.closest('select,button,a,.picture') ? null : event.changedTouches[0];
 },{passive:true});
 screen.addEventListener('touchend',event=>{
-  if (!swipeStart) return;
+  if (!swipeStart || screen.classList.contains('in-portfolio')) return;
   const end=event.changedTouches[0], dx=end.clientX-swipeStart.clientX;
   if(Math.abs(dx)>55 && Math.abs(dx)>1.6*Math.abs(end.clientY-swipeStart.clientY)) changeSection(dx<0);
   swipeStart=null;
@@ -290,6 +290,7 @@ thoughts.addEventListener('click', event => {
   navigationTimer = setTimeout(() => {
     bubble.classList.remove('aimed');
     if (bubble.id === 'open-about') changeSection(true);
+    else if (bubble.id === 'open-portfolio') window.openPortfolio();
     else if (bubble.href) location.assign(bubble.href);
     else if (bubble.id === 'playground') {
       openPanel('Playground');
