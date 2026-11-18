@@ -474,3 +474,25 @@ header {z-index:8;}
  .screen.in-about .home-back{top:20px;}
  .screen.in-about .glass{position:absolute;inset:0;}
 }
+@media(max-width:760px){
+ .screen.in-about #about {inset:80px 4% 20px;}
+ .screen.in-about .bio-heading {
+   grid-template-columns:minmax(130px,42%) minmax(0,1fr);
+   gap:clamp(8px,3vw,18px);align-items:end;
+ }
+ .screen.in-about .mobile-about-portrait {
+   display:block;width:100%;min-width:130px;height:auto;align-self:end;
+ }
+ .screen.in-about .bio-heading > div {min-width:0;align-self:center;padding-bottom:4px;}
+ .screen.in-about .bio-heading h2 {
+   font-size:clamp(29px,8vw,53px);line-height:1.02;letter-spacing:-.055em;
+   margin:.25em 0;overflow-wrap:normal;
+ }
+ .screen.in-about .bio-heading .eyebrow {font-size:clamp(10px,2.4vw,13px);line-height:1.35;}
+ .screen.in-about .bio-heading .role {font-size:clamp(12px,3vw,16px);line-height:1.4;margin:.4em 0 0;}
+}
+@media(max-width:340px){
+ .screen.in-about .bio-heading{grid-template-columns:minmax(105px,40%) minmax(0,1fr);gap:8px;}
+ .screen.in-about .mobile-about-portrait{min-width:105px;}
+ .screen.in-about .bio-heading h2{font-size:clamp(25px,8vw,30px);}
+}
