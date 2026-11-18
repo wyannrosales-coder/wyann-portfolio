@@ -62,48 +62,32 @@ document.querySelector('#copy-message').addEventListener('click', async () => {
 });
 
 const picture = document.querySelector('.picture');
-const strips = Array.from({length: 9}, (_, i) => {
+const portraits = Array.from({length: 9}, (_, index) => {
   const image = new Image();
-  image.src = 'gaze-' + i + '.webp';
+  image.src = 'portrait-' + index + '.webp';
   return image;
 });
-const canvas = document.createElement('canvas');
-picture.append(canvas);
-const output = canvas.getContext('2d');
+const face = document.createElement('img');
+face.alt = '';
+face.draggable = false;
+face.src = portraits[3].src;
+picture.append(face);
 let x = 0, y = 4, bodyX = 0, bodyY = 4;
 let targetX = x, targetY = y, last = 0, frame = 0;
-
-function paint() {
-  const strip = strips[Math.round(y)];
-  if (!strip.naturalWidth) return;
-  const size = strip.naturalHeight;
-  const sourceX = Math.round(x) * size;
-  const pixels = Math.max(1, Math.round(picture.clientWidth * Math.min(devicePixelRatio, 2)));
-  if (canvas.width !== pixels || canvas.height !== pixels) {
-    canvas.width = canvas.height = pixels;
-    output.imageSmoothingQuality = 'high';
-  }
-  const scale = pixels / size;
-  output.resetTransform();
-  output.clearRect(0, 0, pixels, pixels);
-  output.scale(scale, scale);
-  // Draw the face directly from one pose. Confine the follow-through to the torso.
-  const collar = Math.round(size * .50);
-  output.drawImage(strip, sourceX, 0, size, collar, 0, 0, size, collar);
-  const yaw = (bodyX - 4) / 4, pitch = (bodyY - 4) / 4;
-  for (let top = collar; top < size; top += 4) {
-    const progress = (top - collar) / (size - collar);
-    const influence = Math.sin(progress * Math.PI);
-    const tilt = yaw * .023 * influence;
-    const height = Math.min(5, size - top);
-    output.setTransform(scale, tilt * scale, 0, scale,
-      yaw * 9 * influence * scale, (pitch * 4 * influence - tilt * size / 2) * scale);
-    output.drawImage(strip, sourceX, top, size, height, 0, top, size, height);
-  }
-  canvas.style.opacity = '1';
-  picture.style.backgroundImage = 'none';
+let column = 0, row = 1;
+function sector(value, previous) {
+  if (Math.abs(value - previous * 4) < 2.35) return previous;
+  return Math.round(value / 4);
 }
-new ResizeObserver(schedule).observe(picture);
+function paint() {
+  column = sector(x, column);
+  row = sector(y, row);
+  const portrait = portraits[row * 3 + column];
+  if (portrait.complete && portrait.naturalWidth && face.src !== portrait.src) face.src = portrait.src;
+  const yaw = (bodyX - 4) / 4;
+  const pitch = (bodyY - 4) / 4;
+  face.style.transform = `translateX(${yaw * .55}%) rotate(${yaw * .85}deg) scaleY(${1 - pitch * .006})`;
+}
 function render(now) {
   const dt = Math.min(50, now-last || 16);
   last = now;
@@ -118,7 +102,7 @@ function render(now) {
 function schedule() {
   if (!frame) { last = performance.now()-16; frame = requestAnimationFrame(render); }
 }
-strips.forEach(strip => strip.addEventListener('load',schedule));
+portraits.forEach(portrait => portrait.addEventListener('load', schedule));
 function turn(col,row) { targetX=col; targetY=row; schedule(); }
 function follow(event) {
   const b = picture.getBoundingClientRect();
