@@ -138,8 +138,8 @@
  lightbox.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='ArrowLeft'){event.preventDefault();displayImage(lightboxIndex-1);}if(event.key==='ArrowRight'){event.preventDefault();displayImage(lightboxIndex+1);}});
  lightbox.addEventListener('click',event=>{if(event.target===lightbox||event.target.classList.contains('lightbox-image-area'))lightbox.close();});
  lightbox.addEventListener('close',()=>lightboxOpener?.focus({preventScroll:true}));
- let crawlTimer,crawlFrame,unclipTimer,settleFrame=0,settleAnchor=null,lastScrollTime=0,gestureStart=0,lastScrollTop=0,crawlSpeed=0;
- function resetCrawl(){cancelAnimationFrame(settleFrame);settleFrame=0;settleAnchor=null;clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;crawlSpeed=0;}
+ let crawlTimer,crawlFrame,unclipTimer,settleFrame=0,settleAnchor=null,lastScrollTime=0,gestureStart=0,lastScrollTop=0,crawlSpeed=0,lastTiltInput=0;
+ function resetCrawl(){cancelAnimationFrame(settleFrame);settleFrame=0;settleAnchor=null;clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;crawlSpeed=0;lastTiltInput=0;}
  function positionCrawl(){
   const h=study.clientHeight,origin=study.scrollTop+h*.82;
   const angle=innerWidth<=760?50:64;
@@ -156,8 +156,12 @@
   if(!settleAnchor)return;
   const {matrix:m,origin}=planeState(),q=settleAnchor.localY-origin;
   const projected=origin+(m.m22*q+m.m42)/(m.m24*q+m.m44);
-  study.scrollTop=crawlContent.offsetTop+projected-settleAnchor.screenY;
-  scrollTarget=study.scrollTop;
+  // Compensate only perspective movement, retaining the remaining glide distance.
+  const before=study.scrollTop;
+  study.scrollTop+=projected-settleAnchor.previousProjection;
+  const correction=study.scrollTop-before;
+  virtualScroll+=correction;scrollTarget+=correction;
+  settleAnchor.previousProjection=projected;
  }
  function finishSettle(){
   if(!settleAnchor)return;
@@ -168,13 +172,14 @@
   crawlContent.style.clipPath='none';settleAnchor=null;gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=performance.now();
  }
  function settleCrawl(){
+  if(settleAnchor)return;
   if(reduced()||study.hidden){resetCrawl();return;}
   const {matrix:m,origin}=planeState(),screenY=study.clientHeight*.5;
   const projectedY=study.scrollTop+screenY-crawlContent.offsetTop-origin;
   const denominator=m.m22-projectedY*m.m24;
   if(Math.abs(denominator)<.0001){resetCrawl();return;}
   const localY=origin+(projectedY*m.m44-m.m42)/denominator;
-  settleAnchor={localY,screenY};study.classList.remove('crawling');
+  settleAnchor={localY,screenY,previousProjection:projectedY+origin};study.classList.remove('crawling');
   const started=performance.now();
   function settle(now){pinAnchor();if(now-started<650)settleFrame=requestAnimationFrame(settle);else finishSettle();}
   settleFrame=requestAnimationFrame(settle);
@@ -182,6 +187,7 @@
  function crawl(){
   if(reduced()||study.hidden||settleAnchor)return;
   const now=performance.now(),top=study.scrollTop;
+  if(now-lastTiltInput>=180){if(study.classList.contains('crawling'))settleCrawl();return;}
   const elapsed=Math.max(16,now-lastScrollTime);
   if(elapsed>350&&!momentumFrame){gestureStart=lastScrollTop;crawlSpeed=0;}
   const speed=Math.abs(top-lastScrollTop)*1000/elapsed;
@@ -190,7 +196,7 @@
   const longScroll=Math.abs(top-gestureStart)>=study.clientHeight*2 && crawlSpeed>=study.clientHeight*.8;
   if(longScroll||study.classList.contains('crawling')){
    clearTimeout(unclipTimer);positionCrawl();study.classList.add('crawling');
-   clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,680);
+   clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,Math.max(0,180-(now-lastTiltInput)));
   }
  }
  study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
@@ -210,16 +216,18 @@
  }
  study.addEventListener('wheel',event=>{
   if(reduced()||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
-  event.preventDefault();finishSettle();if(!momentumFrame){virtualScroll=scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?study.clientHeight:1);
+  event.preventDefault();if(Math.abs(delta)>=3){finishSettle();lastTiltInput=performance.now();}if(!momentumFrame){virtualScroll=scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   if(!delta)return;
   lastWheelInput=performance.now();
   if(Math.sign(delta)!==Math.sign(scrollTarget-study.scrollTop))virtualScroll=scrollTarget=study.scrollTop;
   scrollTarget=Math.max(0,Math.min(scrollTarget+delta*1.35,study.scrollHeight-study.clientHeight));
   if(!momentumFrame){previousTime=0;momentumFrame=requestAnimationFrame(glide);}
  },{passive:false});
- const interruptScroll=()=>{finishSettle();stopMomentum();};
+ const interruptScroll=()=>{finishSettle();stopMomentum();lastTiltInput=performance.now();};
  study.addEventListener('pointerdown',interruptScroll);study.addEventListener('touchstart',interruptScroll,{passive:true});study.addEventListener('keydown',interruptScroll);motion.addEventListener('change',stopMomentum);
+ study.addEventListener('touchmove',()=>{lastTiltInput=performance.now();},{passive:true});
+ study.addEventListener('pointermove',event=>{if(event.buttons)lastTiltInput=performance.now();},{passive:true});
  caseNav.querySelector('.close-case').onclick=closeStudy;caseNav.querySelector('.case-home').onclick=home;
  caseShell.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const items=[...caseShell.querySelectorAll('button,a[href],[tabindex="0"]')].filter(n=>!n.disabled);const first=items[0],last=items.at(-1);if(event.shiftKey&&(document.activeElement===first||document.activeElement===study)){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
  preview.onclick=openStudy;panel.querySelector('#view-project').onclick=openStudy;
