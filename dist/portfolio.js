@@ -122,8 +122,8 @@
   try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;resetCrawl();document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});study.focus({preventScroll:true});}finally{powerBusy=false;}
   if(!reduced())content.animate([{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:500,easing:'ease-out'});
  }
- let crawlTimer,crawlFrame,unclipTimer,lastScrollTime=0,gestureStart=0,lastScrollTop=0;
- function resetCrawl(){clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;}
+ let crawlTimer,crawlFrame,unclipTimer,settleFrame=0,settleAnchor=null,lastScrollTime=0,gestureStart=0,lastScrollTop=0;
+ function resetCrawl(){cancelAnimationFrame(settleFrame);settleFrame=0;settleAnchor=null;clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;}
  function positionCrawl(){
   const h=study.clientHeight,origin=study.scrollTop+h*.82;
   const angle=innerWidth<=760?50:64;
@@ -132,18 +132,46 @@
   const bottom=Math.max(0,crawlContent.offsetHeight-study.scrollTop-h*1.5);
   crawlContent.style.clipPath=`inset(0 0 ${bottom}px 0)`;
  }
+ function planeState(){
+  const style=getComputedStyle(crawlContent),matrix=new DOMMatrixReadOnly(style.transform==='none'?undefined:style.transform);
+  return {matrix,origin:parseFloat(style.transformOrigin.split(' ')[1])||0};
+ }
+ function pinAnchor(){
+  if(!settleAnchor)return;
+  const {matrix:m,origin}=planeState(),q=settleAnchor.localY-origin;
+  const projected=origin+(m.m22*q+m.m42)/(m.m24*q+m.m44);
+  study.scrollTop=crawlContent.offsetTop+projected-settleAnchor.screenY;
+  scrollTarget=study.scrollTop;
+ }
+ function finishSettle(){
+  if(!settleAnchor)return;
+  cancelAnimationFrame(settleFrame);settleFrame=0;
+  // Finish a cancelled settle at the same reading point before new input.
+  crawlContent.style.transition='none';study.classList.remove('crawling');crawlContent.style.transform='none';
+  pinAnchor();crawlContent.style.removeProperty('transform');crawlContent.style.removeProperty('transition');
+  crawlContent.style.clipPath='none';settleAnchor=null;gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=performance.now();
+ }
+ function settleCrawl(){
+  if(reduced()||study.hidden){resetCrawl();return;}
+  const {matrix:m,origin}=planeState(),screenY=study.clientHeight*.5;
+  const projectedY=study.scrollTop+screenY-crawlContent.offsetTop-origin;
+  const denominator=m.m22-projectedY*m.m24;
+  if(Math.abs(denominator)<.0001){resetCrawl();return;}
+  const localY=origin+(projectedY*m.m44-m.m42)/denominator;
+  settleAnchor={localY,screenY};study.classList.remove('crawling');
+  const started=performance.now();
+  function settle(now){pinAnchor();if(now-started<650)settleFrame=requestAnimationFrame(settle);else finishSettle();}
+  settleFrame=requestAnimationFrame(settle);
+ }
  function crawl(){
-  if(reduced()||study.hidden)return;
+  if(reduced()||study.hidden||settleAnchor)return;
   const now=performance.now(),top=study.scrollTop;
   if(now-lastScrollTime>250&&!momentumFrame)gestureStart=lastScrollTop;
   lastScrollTime=now;lastScrollTop=top;
-  const longScroll=Math.abs(top-gestureStart)>study.clientHeight*.18;
+  const longScroll=Math.abs(top-gestureStart)>study.clientHeight*.5;
   if(longScroll||study.classList.contains('crawling')){
    clearTimeout(unclipTimer);positionCrawl();study.classList.add('crawling');
-   clearTimeout(crawlTimer);crawlTimer=setTimeout(()=>{
-    study.classList.remove('crawling');gestureStart=lastScrollTop=study.scrollTop;
-    unclipTimer=setTimeout(()=>{crawlContent.style.clipPath='none';},650);
-   },680);
+   clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,680);
   }
  }
  study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
@@ -161,12 +189,13 @@
  }
  study.addEventListener('wheel',event=>{
   if(reduced()||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
-  event.preventDefault();if(!momentumFrame){scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
+  event.preventDefault();finishSettle();if(!momentumFrame){scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?study.clientHeight:1);
   scrollTarget=Math.max(0,Math.min(scrollTarget+delta,study.scrollHeight-study.clientHeight));
   if(!momentumFrame){previousTime=0;momentumFrame=requestAnimationFrame(glide);}
  },{passive:false});
- study.addEventListener('pointerdown',stopMomentum);study.addEventListener('touchstart',stopMomentum,{passive:true});study.addEventListener('keydown',stopMomentum);motion.addEventListener('change',stopMomentum);
+ const interruptScroll=()=>{finishSettle();stopMomentum();};
+ study.addEventListener('pointerdown',interruptScroll);study.addEventListener('touchstart',interruptScroll,{passive:true});study.addEventListener('keydown',interruptScroll);motion.addEventListener('change',stopMomentum);
  caseNav.querySelector('.close-case').onclick=closeStudy;caseNav.querySelector('.case-home').onclick=home;
  caseShell.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const items=[...caseShell.querySelectorAll('button,a[href],[tabindex="0"]')].filter(n=>!n.disabled);const first=items[0],last=items.at(-1);if(event.shiftKey&&(document.activeElement===first||document.activeElement===study)){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
  preview.onclick=openStudy;panel.querySelector('#view-project').onclick=openStudy;
