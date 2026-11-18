@@ -187,7 +187,7 @@
  function crawl(){
   if(reduced()||study.hidden||settleAnchor)return;
   const now=performance.now(),top=study.scrollTop;
-  if(now-lastTiltInput>=180){if(study.classList.contains('crawling'))settleCrawl();return;}
+  if(now-lastTiltInput>=1500){if(study.classList.contains('crawling'))settleCrawl();return;}
   const elapsed=Math.max(16,now-lastScrollTime);
   if(elapsed>350&&!momentumFrame){gestureStart=lastScrollTop;crawlSpeed=0;}
   const speed=Math.abs(top-lastScrollTop)*1000/elapsed;
@@ -196,7 +196,7 @@
   const longScroll=Math.abs(top-gestureStart)>=study.clientHeight*2 && crawlSpeed>=study.clientHeight*.8;
   if(longScroll||study.classList.contains('crawling')){
    clearTimeout(unclipTimer);positionCrawl();study.classList.add('crawling');
-   clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,Math.max(0,180-(now-lastTiltInput)));
+   clearTimeout(crawlTimer);crawlTimer=setTimeout(settleCrawl,Math.max(0,1500-(now-lastTiltInput)));
   }
  }
  study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
