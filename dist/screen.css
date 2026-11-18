@@ -221,9 +221,9 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 .glitch-band { position:absolute; inset:0; overflow:hidden; display:none; pointer-events:none; }
 .glitch-band:is([data-effect="tear"],[data-effect="grain"],[data-effect="bleed"]) { display:block; }
 .glitch-band[data-effect="tear"] img { translate:var(--tear) 0; }
-.glitch-band[data-effect="grain"] img { filter:url(#static-grain); }
-.glitch-band[data-effect="bleed"] img { filter:url(#color-slip); }
+.glitch-band[data-effect="grain"] img { filter:contrast(1.16); }
+.glitch-band[data-effect="bleed"] img { filter:saturate(1.35); }
 .glass::after {
-  background:linear-gradient(to bottom,transparent,#e6e7b51a 48%,#0002 54%,transparent) 0 calc(var(--beam,-80px) - 16px) / 100% 32px no-repeat;
+  background:linear-gradient(to bottom,transparent,#e6e7b539 48%,#0004 54%,transparent) 0 calc(var(--beam,-80px) - 16px) / 100% 32px no-repeat;
   animation:glass-flicker 4s steps(1) infinite;
 }

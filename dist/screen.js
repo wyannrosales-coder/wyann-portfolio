@@ -88,7 +88,7 @@ function paint() {
   row = sector(y, row);
   const portrait = portraits[row * 3 + column];
   if (portrait.complete && portrait.naturalWidth && face.src !== portrait.src) face.src = portrait.src;
-  if (slice.src !== face.src) slice.src = face.src;
+  syncSlice();
   const yaw = (bodyX - 4) / 4;
   const pitch = (bodyY - 4) / 4;
   face.style.transform = `translateX(${yaw * .55}%) rotate(${yaw * .85}deg) scaleY(${1 - pitch * .006})`;
@@ -130,19 +130,41 @@ screen.addEventListener('pointerleave', event => {
 const glass = document.querySelector('.glass');
 let sweepFrame = 0;
 let sweepTimer = 0;
+const variants = {};
+for (const effect of ['grain', 'bleed']) {
+  variants[effect] = portraits.map((_, index) => {
+    const image = new Image();
+    image.src = effect + '-' + index + '.webp';
+    return image;
+  });
+}
+function syncSlice() {
+  const index = portraits.findIndex(portrait => portrait.src === face.src);
+  const url = variants[band.dataset.effect]?.[index]?.src || face.src;
+  if (slice.src !== url) slice.src = url;
+}
+const effects = [];
+function nextEffect() {
+  if (!effects.length) {
+    const remaining = ['tear','grain','bleed'];
+    while (remaining.length) effects.push(remaining.splice(Math.floor(Math.random()*remaining.length),1)[0]);
+  }
+  return effects.pop();
+}
 function sweep() {
   if (motion.matches || document.hidden) return;
-  const effect = ['tear', 'grain', 'bleed', 'quiet'][Math.floor(Math.random() * 4)];
+  const effect = nextEffect();
   const duration = 1100 + Math.random() * 1700;
   const start = performance.now();
   band.dataset.effect = effect;
-  band.style.setProperty('--tear', Math.random() < .5 ? '-3px' : '3px');
+  syncSlice();
+  band.style.setProperty('--tear', Math.random() < .5 ? '-13px' : '13px');
   function advance(now) {
     const progress = (now - start) / duration;
     if (progress >= 1) {
       glass.style.removeProperty('--beam');
       band.removeAttribute('data-effect');
-      sweepTimer = setTimeout(sweep, 350 + Math.random() * 3100);
+      sweepTimer = setTimeout(sweep, 280 + Math.random() * 1450);
       return;
     }
     const bounds = glass.getBoundingClientRect();
@@ -150,8 +172,8 @@ function sweep() {
     const position = (1 - progress) * (bounds.height + 32) - 16;
     const local = bounds.top + position - portrait.top;
     glass.style.setProperty('--beam', position + 'px');
-    band.style.clipPath = 'inset(' + Math.max(0, local - 4) + 'px 0 ' +
-      Math.max(0, portrait.height - local - 4) + 'px 0)';
+    band.style.clipPath = 'inset(' + Math.max(0, local - 13) + 'px 0 ' +
+      Math.max(0, portrait.height - local - 13) + 'px 0)';
     sweepFrame = requestAnimationFrame(advance);
   }
   advance(start);
