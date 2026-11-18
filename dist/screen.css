@@ -308,7 +308,7 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 .thought:nth-child(3){right:66%;top:47%;background:#e6c8ff;animation-delay:-3s;}
 .thought:nth-child(4){left:65%;top:46%;background:#ffe684;animation-delay:-2s;}
 .thought:nth-child(even)::after {left:13%;right:auto;}
-.thought:is(:hover,:focus-visible){animation-play-state:paused;color:#0a0e22;outline:3px solid white;outline-offset:4px;}
+.thought:is(:hover,:focus-visible){animation-play-state:paused;color:#0a0e22;}
 @keyframes bob {from{transform:translateY(-3px) rotate(-2deg);}to{transform:translateY(4px) rotate(1deg);}}
 #panel-actions {display:flex;flex-wrap:wrap;gap:8px;}
 .screen.in-about {background-image:linear-gradient(90deg,#090b1845,#090b18dc 49%,#090b18ed),var(--channel-art);}
@@ -373,6 +373,9 @@ header {z-index:8;}
 @font-face{font-family:"Comic Neue";src:url(comic-neue-bold.ttf) format("truetype");font-weight:700;font-display:swap;}
 .screen .thoughts .thought{
   --bubble-fill:#fff;
+  --hover-tilt:-4deg;
+  scale:1;rotate:0deg;transform-origin:center;
+  transition:scale .24s ease,rotate .24s ease;
   font:700 clamp(18px,1.6vw,25px)/1 "Comic Neue",cursive;
   letter-spacing:-.025em;background:none;border:0;box-shadow:none;filter:none;
   width:clamp(140px,12vw,192px);height:clamp(76px,6.7vw,103px);padding:0 8px 12px;
@@ -382,7 +385,14 @@ header {z-index:8;}
 .bubble-art>path{stroke:#191820;stroke-width:2;stroke-linejoin:round;}
 .bubble-art .paper{fill:var(--bubble-fill);transition:fill .15s;}
 .thought:nth-child(2) span,.thought:nth-child(3) span{translate:0 2px;}
-@media(hover:hover){.screen .thoughts .thought:hover{--bubble-fill:var(--paper);}}
+/* Independent transforms preserve the gentle bob while hovering. */
+.screen .thoughts .thought:nth-child(even){--hover-tilt:4deg;}
+@media(hover:hover){
+ .screen .thoughts .thought:hover{--bubble-fill:var(--paper);scale:1.2;rotate:var(--hover-tilt);z-index:7;outline:none;}
+}
+.screen .thoughts .thought:focus-visible{outline:none;}
+.screen .thoughts .thought:focus-visible .bubble-art{filter:drop-shadow(0 0 3px #cce6ff) drop-shadow(0 0 3px #cce6ff);}
+@media(prefers-reduced-motion:reduce){.screen .thoughts .thought{transition:none;animation:none;}}
 .screen .thoughts .thought:is(:focus-visible,.aimed){--bubble-fill:var(--paper);}
 @media(max-width:760px){
   .screen:not(.in-about) .thoughts{display:contents;}
