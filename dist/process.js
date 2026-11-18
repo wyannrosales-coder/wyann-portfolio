@@ -886,9 +886,9 @@
         L.s0 = s;        L.x0 =  visW * 0.2;  L.y0 = -0.08 * s;
         L.s1 = s * 0.92; L.x1 = -visW * 0.2;  L.y1 = -0.04 * s;
       } else {
-        const s = Math.min(visW * 0.9 / 2.8, visH * 0.42 / 2.0);
-        L.s0 = s * 0.88; L.x0 = 0; L.y0 = visH * 0.2;
-        L.s1 = s * 0.74; L.x1 = 0; L.y1 = visH * 0.2;
+        const s = Math.min(visW * 1.18 / 2.8, visH * 0.55 / 2.0);
+        L.s0 = s;        L.x0 = 0; L.y0 = visH * 0.18;
+        L.s1 = s * 0.9;  L.x1 = 0; L.y1 = visH * 0.18;
       }
     }
 

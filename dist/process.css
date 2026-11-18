@@ -51,12 +51,12 @@
 
 @media(max-width:760px){
   .screen.in-process{height:calc(100svh - 24px);min-height:0;}
-  .process-canvas{height:52%;transform:perspective(900px) rotateY(calc(var(--gyro-x,0)*2deg)) rotateX(calc(var(--gyro-y,0)*-2deg));transition:transform .16s linear;}
+  .process-canvas{height:58%;transform:perspective(900px) rotateY(calc(var(--gyro-x,0)*2deg)) rotateX(calc(var(--gyro-y,0)*-2deg));transition:transform .16s linear;}
   .process-scroller{overflow:hidden;touch-action:none;}
   .process-ui{touch-action:pan-x;}
   .process-hero{left:7%;right:7%;top:auto;bottom:10%;transform:none;max-width:none;}
   .process-hero h2{font-size:clamp(34px,10vw,46px);}
-  .process-step{left:7%;right:7%;width:auto;top:52%;bottom:auto;max-height:38%;overflow:auto;padding-bottom:56px;transform:translateY(var(--y,0px));}
+  .process-step{left:7%;right:7%;width:auto;top:56%;bottom:auto;max-height:34%;overflow:auto;padding-bottom:56px;transform:translateY(var(--y,0px));}
   .process-step h3{font-size:34px;}
   .process-tag,.process-out,.process-note{display:none;}
   .process-desc{font-size:13px;margin-bottom:10px;}
