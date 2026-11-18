@@ -496,3 +496,23 @@ header {z-index:8;}
  .screen.in-about .mobile-about-portrait{min-width:105px;}
  .screen.in-about .bio-heading h2{font-size:clamp(25px,8vw,30px);}
 }
+header {display:flex;justify-content:flex-end;}
+.screen header nav {display:flex;align-items:center;justify-content:flex-end;gap:8px;}
+.screen header nav .contact {display:inline-flex;justify-self:auto;}
+@media(min-width:761px) and (max-width:1100px){
+ .screen.in-about .picture {top:18%;bottom:auto;width:min(40%,62vh);}
+}
+@media(max-width:760px){
+ .screen header,.screen:not(.in-about) header {display:flex;justify-content:flex-end;margin:0 5%;padding-top:15px;}
+ .screen header nav,.screen:not(.in-about) header nav {display:flex;gap:4px;}
+ .screen header nav .contact {display:inline-flex;font-size:12px;padding:.55em .7em;}
+ .screen:not(.in-about) .copy {top:clamp(90px,15vh,135px);z-index:4;}
+ .screen:not(.in-about) .copy h1 {font-size:clamp(37px,10vw,54px);}
+ .screen:not(.in-about) .copy p {font-size:clamp(13px,3.6vw,17px);}
+ .screen:not(.in-about) .picture {width:min(125%,570px);bottom:-8%;max-width:none;}
+ .screen:not(.in-about) .thought:nth-child(1){inset:35% auto auto 2%;}
+ .screen:not(.in-about) .thought:nth-child(2){inset:34% 2% auto auto;}
+ .screen:not(.in-about) .thought:nth-child(3){inset:49% auto auto 0;}
+ .screen:not(.in-about) .thought:nth-child(4){inset:49% 0 auto auto;}
+ .screen.in-about header {position:relative;z-index:8;}
+}
