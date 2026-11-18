@@ -637,3 +637,16 @@ header {display:flex;justify-content:flex-end;}
  .work-tile[aria-pressed=true]{background:#c9efff;color:#101a28;text-shadow:none;}
 }
 @media(max-width:760px) and (max-height:650px){.work-stage{width:min(65%,43vh);left:50%;transform:translateX(-50%);top:23%;}.work-caption{top:70%;}.work-tiles{bottom:3%;}}
+/* Keep inactive content out of the scene and its transition snapshot. */
+.screen:not(.in-about) #about{visibility:hidden;pointer-events:none;}
+.home-sheet #about{display:none!important;}
+.work-preview.next-project{z-index:0;transform:perspective(1200px) translate3d(12%,108%,-200px) rotateX(-42deg) rotateZ(9deg) scale(.8);opacity:.72;transition:opacity .35s;}
+.work-preview.next-project:hover{opacity:1;}
+.work-preview.next-project.waiting{opacity:0;pointer-events:none;}
+.work-stage>.work-preview:not(.next-project){z-index:1;}
+.project-panorama{transform:perspective(1000px) translate3d(var(--drift-x,0px),var(--drift-y,0px),0) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) rotate(-1deg);}
+.work-heading{translate:calc(var(--drift-x,0px) * -.3) calc(var(--drift-y,0px) * -.3);}
+.work-tiles{translate:calc(var(--drift-x,0px) * -.2) calc(var(--drift-y,0px) * -.2);}
+.work-preview{touch-action:none;}
+.work-tiles{touch-action:pan-x;}
+@media(prefers-reduced-motion:reduce){.project-panorama{transform:none;}.work-heading,.work-tiles{translate:none;}}
