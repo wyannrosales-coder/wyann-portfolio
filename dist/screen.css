@@ -693,7 +693,7 @@ body.reading-project{overflow:hidden;}
 .tv-power{position:fixed;inset:0;z-index:200;background:#000;overflow:hidden;pointer-events:all;}
 .tv-power .power-sheet{transform-origin:center;pointer-events:none;}
 .power-line{position:absolute;left:12%;right:12%;top:50%;height:2px;background:#eef8ff;box-shadow:0 0 10px 2px #c8eaff,0 0 30px #b4d8ff;opacity:0;transform-origin:center;}
-.crawling #case-content>.crawl-active{transform:perspective(2600px) rotateX(32deg) scale(.88);}
+.crawling #case-content>.crawl-active{transform:perspective(2600px) rotateX(64deg) scale(.88);}
 .case-shell .case-study{-webkit-overflow-scrolling:touch;}
-@media(max-width:760px){.crawling #case-content>.crawl-active{transform:perspective(2800px) rotateX(25deg) scale(.92);}}
+@media(max-width:760px){.crawling #case-content>.crawl-active{transform:perspective(2800px) rotateX(50deg) scale(.92);}}
 @media(prefers-reduced-motion:reduce){.crawling #case-content>.crawl-active{transform:none;}}
