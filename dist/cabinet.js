@@ -35,3 +35,24 @@ function aimPaddle(e){if(wall){const r=canvas.getBoundingClientRect();paddle=Mat
 canvas.onpointermove=canvas.onpointerdown=aimPaddle;
 const play=document.querySelector('#play');play.onclick=()=>{if(state==='play'){state='paused';play.textContent='Resume';}else{if(state!=='paused')reset();state='play';play.textContent='Pause';}};
 onblur=()=>{keys.clear();if(state==='play')play.click();};reset();requestAnimationFrame(frame);
+
+installGameExit(document.querySelector('.back'), () => {
+ const playing = state === 'play';
+ if (playing) state = 'confirm-exit';
+ keys.clear();
+ return () => { if (playing) { state = 'play'; last = performance.now(); } };
+});
+// Support held movement and soft drop on the on-screen controls.
+document.querySelectorAll('.controls button').forEach((button, index) => {
+ const code = bindings[index];
+ if (!['ArrowLeft','ArrowRight','ArrowDown'].includes(code)) return;
+ let delay, repeat;
+ function stop(){clearTimeout(delay);clearInterval(repeat);}
+ button.onpointerdown = event => {
+   if(event.button !== 0) return;
+   stop();button.setPointerCapture(event.pointerId);action(code);
+   delay=setTimeout(()=>{repeat=setInterval(()=>action(code),80);},230);
+ };
+ button.onlostpointercapture=button.onpointercancel=button.onpointerup=stop;
+ button.onclick=event=>{if(!event.detail)action(code);};
+});

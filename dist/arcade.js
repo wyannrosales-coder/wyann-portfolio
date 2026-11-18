@@ -159,7 +159,7 @@ function draw(){
 function resize(){width=innerWidth;height=innerHeight;const d=Math.min(devicePixelRatio,2);canvas.width=width*d;canvas.height=height*d;ctx.setTransform(d,0,0,d,0,0);}
 window.addEventListener('resize',resize);resize();
 function frame(time){const dt=Math.min(.04,(time-last)/1000);last=time;if(state==='flight'){travel+=dt;update(dt);}draw();requestAnimationFrame(frame);}
-window.addEventListener('keydown',e=>{if(state==='flight'){keys.add(e.code);if(e.code==='Escape')pause();}});
+window.addEventListener('keydown',e=>{if(state==='flight'){keys.add(e.code);}});
 window.addEventListener('keyup',e=>keys.delete(e.code));
 function point(e){aim={x:e.clientX/width,y:e.clientY/height};}
 canvas.onpointermove=point;canvas.onpointerdown=e=>{if(state!=='flight')return;point(e);if(e.button===2){e.preventDefault();missile();return;}if(e.button!==0)return;held=true;canvas.setPointerCapture(e.pointerId);if(shotDelay<=0)shoot();};
@@ -170,3 +170,10 @@ overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to stee
 leaderboard();requestAnimationFrame(frame);
 
 requestAnimationFrame(()=>requestAnimationFrame(()=>$('#boot').hidden=true));
+
+installGameExit(document.querySelector('nav a'), () => {
+ const flying = state === 'flight';
+ if (flying) state = 'confirm-exit';
+ keys.clear(); held = false; steer = {x:0,y:0};
+ return () => { if (flying) resume(); };
+});

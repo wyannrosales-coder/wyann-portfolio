@@ -1,0 +1,11 @@
+.exit-game{box-sizing:border-box;width:min(90vw,390px);padding:24px;background:#10192b;color:#fff;border:1px solid #83b3bd;border-radius:14px;font:16px/1.5 system-ui;box-shadow:0 12px 60px #000a}
+.exit-game::backdrop{background:#020614cf}.exit-game h2{margin:0}.exit-game p{color:#c9d6e9}.exit-game div{display:flex;gap:10px;flex-wrap:wrap}.exit-game button{min-height:44px}.exit-game button:first-child{background:#b5ffdf;color:#10222a}
+nav{z-index:15}nav a,nav button,.controls button,#play,#missile,.back{min-height:44px;touch-action:manipulation}
+.cabinet .back{position:sticky;top:0;z-index:4}.controls{user-select:none}
+@media(any-pointer:coarse){body.play #stick{display:grid}body.play #missile{display:block}#stick,#missile{bottom:max(16px,env(safe-area-inset-bottom));user-select:none}}
+@media(max-width:760px),(max-height:520px){
+ nav{top:max(5px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left));right:max(6px,env(safe-area-inset-right));align-items:flex-start}
+ nav>div{min-width:0;font-size:11px}section{top:calc(50% + 25px);max-height:calc(100dvh - 85px)}
+ .cabinet{padding:6px 8px max(10px,env(safe-area-inset-bottom))}.cabinet h1{font-size:22px;margin:4px}.cabinet p{font-size:13px}.cabinet canvas{width:auto;height:min(55dvh,480px);margin:4px auto}.controls button{padding:6px 9px}
+}
+@media(max-height:520px) and (orientation:landscape){.cabinet{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;max-width:100%;min-height:94dvh}.cabinet canvas{grid-column:2;grid-row:1/5;height:89dvh}.cabinet .back,.cabinet h1,.cabinet .status{grid-column:1}.cabinet .controls,.cabinet p,.cabinet #play{grid-column:3}.cabinet .controls{grid-row:1/3}}
