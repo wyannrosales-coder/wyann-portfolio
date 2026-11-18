@@ -164,8 +164,18 @@ window.addEventListener('keyup',e=>keys.delete(e.code));
 function point(e){aim={x:e.clientX/width,y:e.clientY/height};}
 canvas.onpointermove=point;canvas.onpointerdown=e=>{if(state!=='flight')return;point(e);if(e.button===2){e.preventDefault();missile();return;}if(e.button!==0)return;held=true;canvas.setPointerCapture(e.pointerId);if(shotDelay<=0)shoot();};
 canvas.onlostpointercapture=canvas.onpointercancel=canvas.onpointerup=()=>{held=false;};
-const stick=$('#stick');function moveStick(e){const r=stick.getBoundingClientRect();steer={x:clamp((e.clientX-r.left-r.width/2)/32,-1,1),y:clamp((e.clientY-r.top-r.height/2)/32,-1,1)};}
-stick.onpointerdown=e=>{stick.setPointerCapture(e.pointerId);moveStick(e);};stick.onpointermove=e=>{if(stick.hasPointerCapture(e.pointerId))moveStick(e);};stick.onlostpointercapture=()=>{steer={x:0,y:0};};
+const stick=$('#stick'),stickKnob=stick.querySelector('span');
+function moveStick(e){
+ const r=stick.getBoundingClientRect(),x=clamp((e.clientX-r.left-r.width/2)/(r.width*.34),-1,1),y=clamp((e.clientY-r.top-r.height/2)/(r.height*.34),-1,1);
+ steer={x,y};stickKnob.style.transform=`translate(${x*24}px,${y*24}px)`;
+}
+function releaseStick(){steer={x:0,y:0};stickKnob.style.transform='translate(0,0)';}
+stick.onpointerdown=e=>{e.preventDefault();stick.setPointerCapture(e.pointerId);moveStick(e);};
+stick.onpointermove=e=>{if(stick.hasPointerCapture(e.pointerId))moveStick(e);};
+stick.onlostpointercapture=stick.onpointercancel=stick.onpointerup=releaseStick;
+const fire=$('#fire');
+fire.onpointerdown=e=>{e.preventDefault();fire.setPointerCapture(e.pointerId);held=true;if(shotDelay<=0)shoot();};
+fire.onlostpointercapture=fire.onpointercancel=fire.onpointerup=()=>{held=false;};
 overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to steer, mouse to aim, hold left click to fire, right-click for a blast missile. On touchscreens, steer with the pad and hold a target to fire.','Launch flight',restart);
 leaderboard();requestAnimationFrame(frame);
 

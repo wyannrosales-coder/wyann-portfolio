@@ -1,5 +1,11 @@
 'use strict';
 const wall=new URLSearchParams(location.search).get('game')==='wall';
+document.body.classList.add(wall?'wall-game':'blocks-game');
+const rotateNotice=document.createElement('div');
+rotateNotice.className='cabinet-rotate';
+rotateNotice.textContent='Rotate your phone to portrait to play';
+rotateNotice.setAttribute('role','status');
+document.body.append(rotateNotice);
 const canvas=document.querySelector('canvas'), ctx=canvas.getContext('2d');
 canvas.width=wall?400:240;canvas.height=480;
 const title=wall?'Wall Rally':'Block Drop';
@@ -28,8 +34,8 @@ function rally(dt){paddle=Math.max(32,Math.min(368,paddle+dt*330*(Number(keys.ha
 function tile(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x+1,y+1,w-2,h-2);ctx.fillStyle='#ffffff55';ctx.fillRect(x+2,y+2,w-4,2);}
 function draw(){ctx.clearRect(0,0,canvas.width,480);if(wall){bricks.forEach((v,i)=>{if(v)tile(4+i%8*49,36+Math.floor(i/8)*25,46,21,colors[v]);});tile(paddle-32,432,64,12,colors[1]);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ball.x,ball.y,6,0,Math.PI*2);ctx.fill();}else{board.forEach((r,j)=>r.forEach((v,i)=>tile(i*24,j*24,24,24,v?colors[v]:'#10192d')));piece.forEach((r,j)=>r.forEach((v,i)=>{if(v)tile((px+i)*24,(py+j)*24,24,24,colors[v]);}));}}
 function frame(now){const dt=Math.min(.025,(now-last)/1000);last=now;if(state==='play'){if(wall)rally(dt);else if((timer+=dt)>Math.max(.1,.65-lines*.015)){fall();timer=0;}}draw();requestAnimationFrame(frame);}
-const bindings=wall?['ArrowLeft','ArrowRight']:['ArrowLeft','ArrowUp','ArrowDown','ArrowRight','Space'];
-for(const code of bindings){const b=document.createElement('button');b.textContent=({ArrowLeft:'←',ArrowRight:'→',ArrowUp:'Rotate',ArrowDown:'↓',Space:'Drop'})[code];b.onclick=()=>action(code);document.querySelector('.controls').append(b);}
+const bindings=wall?['ArrowLeft','ArrowRight']:['ArrowLeft','ArrowRight','ArrowUp','Space'];
+for(const code of bindings){const b=document.createElement('button');b.dataset.control=code;b.textContent=({ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↻ Rotate',Space:'⇊ Drop'})[code];b.onclick=()=>action(code);document.querySelector('.controls').append(b);}
 onkeydown=e=>{if(state==='play'&&bindings.includes(e.code)){e.preventDefault();keys.add(e.code);if(!wall)action(e.code);}};onkeyup=e=>keys.delete(e.code);
 function aimPaddle(e){if(wall){const r=canvas.getBoundingClientRect();paddle=Math.max(32,Math.min(368,(e.clientX-r.left)*400/r.width));}}
 canvas.onpointermove=canvas.onpointerdown=aimPaddle;
