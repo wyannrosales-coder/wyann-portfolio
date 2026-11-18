@@ -10,7 +10,7 @@ const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const panels = {
   'My process': ['I start with user research, map the key flows, and test ideas through high-fidelity prototypes. For Dwell, I worked with developers through launch and tracked adoption to guide improvements.'],
-  Playground: ['Move your pointer or drag across the portrait to explore gaze tracking. Watch for the randomized CRT tracking tears, grain, and color bleed.'],
+  Playground: ['Choose an effect to try on the portrait.'],
   Labs: ['A space for creative coding and web experiments.'],
   Studio: ['Wyann is a creative designer and developer.', 'Pitch us an idea'],
   Openings: ['Have a role or collaboration in mind? Draft a note to introduce yourself.', 'Come work here'],
@@ -289,7 +289,24 @@ thoughts.addEventListener('click', event => {
     bubble.classList.remove('aimed');
     if (bubble.id === 'open-about') changeSection(true);
     else if (bubble.href) location.assign(bubble.href);
-    else openPanel(bubble.dataset.panel || 'Playground');
+    else if (bubble.id === 'playground') {
+      openPanel('Playground');
+      for (const [effect,label] of [['tear','Tracking tear'],['grain','Static'],['bleed','Color bleed']]) {
+        const button = document.createElement('button');
+        button.className = 'pill';
+        button.textContent = label;
+        button.onclick = () => {
+          dialog.close();
+          clearTimeout(glitchTimer);
+          band.style.clipPath = 'inset(40% 0 48% 0)';
+          band.style.setProperty('--tear','12px');
+          band.dataset.effect = effect;
+          syncSlice();
+          glitchTimer = setTimeout(restartGlitches, 650);
+        };
+        actions.append(button);
+      }
+    } else openPanel(bubble.dataset.panel);
   }, motion.matches ? 60 : 420);
 });
 document.addEventListener('pointerdown', event => {
