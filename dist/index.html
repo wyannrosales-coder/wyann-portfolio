@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Meet Jules, a creative designer and developer.">
+<title>inframe® — Jules</title>
+<link rel="stylesheet" href="screen.css">
+<script src="screen.js" defer></script>
+</head>
+<body>
+<main class="set">
+  <section class="screen" aria-labelledby="intro">
+    <div class="picture" aria-hidden="true"></div>
+    <header>
+      <a href="./" class="brand">inframe<sup>®</sup> *</a>
+      <nav aria-label="Main navigation">
+        <button data-panel="Labs">Labs</button>
+        <button data-panel="Studio">Studio</button>
+        <button data-panel="Openings">Openings</button>
+        <button data-panel="Shop">Shop</button>
+      </nav>
+      <button class="pill contact" data-panel="Get in touch">Get in touch</button>
+    </header>
+    <div class="copy">
+      <h1 id="intro"><span>Hey there, meet JULES</span><span>A creative designer<br>and developer.</span></h1>
+      <p>Glad you stopped in. Want to collaborate?</p>
+      <div class="actions">
+        <button class="pill primary" data-panel="Pitch us an idea">Pitch us an idea</button>
+        <button class="pill" data-panel="Come work here">Come work here</button>
+        <button class="pill" data-panel="Send a brief hello">Send a brief hello</button>
+      </div>
+    </div>
+    <div class="pointer" aria-hidden="true"></div>
+    <div class="glass" aria-hidden="true"></div>
+  </section>
+</main>
+<dialog aria-labelledby="panel-title">
+  <form method="dialog"><button class="close" aria-label="Close">×</button></form>
+  <h2 id="panel-title"></h2>
+  <p id="panel-description"></p>
+  <div id="panel-actions"></div>
+  <div id="draft" hidden>
+    <label for="message">Your message</label>
+    <textarea id="message" rows="4"></textarea>
+    <button type="button" class="pill primary" id="copy-message">Copy message</button>
+    <p id="copy-status" role="status"></p>
+  </div>
+</dialog>
+</body>
+</html>
