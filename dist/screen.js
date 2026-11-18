@@ -10,6 +10,7 @@ const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const panels = {
   'My process': ['I start with user research, map the key flows, and test ideas through high-fidelity prototypes. For Dwell, I worked with developers through launch and tracked adoption to guide improvements.'],
+  Playground: ['Move your pointer or drag across the portrait to explore gaze tracking. Watch for the randomized CRT tracking tears, grain, and color bleed.'],
   Labs: ['A space for creative coding and web experiments.'],
   Studio: ['Wyann is a creative designer and developer.', 'Pitch us an idea'],
   Openings: ['Have a role or collaboration in mind? Draft a note to introduce yourself.', 'Come work here'],
@@ -112,6 +113,7 @@ function schedule() {
 portraits.forEach(portrait => portrait.addEventListener('load', schedule));
 function turn(col,row) { targetX=col; targetY=row; schedule(); }
 function follow(event) {
+  if (screen.querySelector('.thought.aimed')) return;
   const b = picture.getBoundingClientRect();
   const dx = (event.clientX-b.left-b.width*.5)/(b.width*.34);
   const dy = (event.clientY-b.top-b.height*.235)/(b.height*.28);
@@ -268,23 +270,31 @@ screen.addEventListener('touchend',event=>{
   swipeStart=null;
 },{passive:true});
 
-document.querySelector('#open-about').addEventListener('click', () => changeSection(true));
-document.querySelector('#playground').addEventListener('click', () => {
-  title.textContent = 'CRT Playground';
-  description.textContent = 'Tune the background channel.';
-  draft.hidden = true;
-  actions.replaceChildren(...Array.from(channel.options, option => {
-    const button = document.createElement('button');
-    button.className = 'pill';
-    button.textContent = option.text;
-    button.onclick = () => {
-      channel.value = option.value;
-      channel.dispatchEvent(new Event('change'));
-      dialog.close();
-    };
-    return button;
-  }));
-  dialog.showModal();
+const thoughts = document.querySelector('.thoughts');
+let navigationTimer;
+thoughts.addEventListener('click', event => {
+  const bubble = event.target.closest('.thought');
+  if (!bubble || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  event.stopPropagation();
+  clearTimeout(navigationTimer);
+  thoughts.querySelector('.aimed')?.classList.remove('aimed');
+  bubble.classList.add('aimed');
+  const bounds = bubble.getBoundingClientRect();
+  const portrait = picture.getBoundingClientRect();
+  const dx = bounds.left + bounds.width / 2 - portrait.left - portrait.width / 2;
+  const dy = bounds.top + bounds.height / 2 - portrait.top - portrait.height * .235;
+  turn(Math.abs(dx) < 15 ? 4 : dx < 0 ? 0 : 8, Math.abs(dy) < 20 ? 4 : dy < 0 ? 0 : 8);
+  navigationTimer = setTimeout(() => {
+    bubble.classList.remove('aimed');
+    if (bubble.id === 'open-about') changeSection(true);
+    else if (bubble.href) location.assign(bubble.href);
+    else openPanel(bubble.dataset.panel || 'Playground');
+  }, motion.matches ? 60 : 420);
+});
+document.addEventListener('pointerdown', event => {
+  const tools = document.querySelector('.prototype-tools');
+  if (!tools.contains(event.target)) tools.open = false;
 });
 about.addEventListener('scroll', () => {
   about.classList.toggle('cv-scrolled', about.scrollTop > 20);

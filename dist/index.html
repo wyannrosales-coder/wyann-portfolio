@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Meet Wyann Rosales, a creative designer and developer.">
 <title>inframe® — Wyann Rosales</title>
-<link rel="stylesheet" href="screen.css?v=wyann-home">
-<script src="screen.js?v=wyann-home" defer></script>
+<link rel="stylesheet" href="screen.css?v=comic-menu">
+<script src="screen.js?v=comic-menu" defer></script>
 </head>
 <body>
 <svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
@@ -25,6 +25,9 @@
         <button data-panel="Studio">Studio</button>
         <button data-panel="Openings">Openings</button>
         <button data-panel="Shop">Shop</button>
+        <details class="prototype-tools"><summary aria-label="Prototype settings" title="Prototype settings">•••</summary>    <label class="channel-picker">Background
+      <select id="channel"><option value="0">Memphis Pop</option><option value="1">Xerox Punk</option><option value="2">Chrome Orbit</option><option value="3">Graffiti Wall</option><option value="4">Liquid Light</option></select>
+    </label></details>
       </nav>
       <button class="pill contact" data-panel="Get in touch">Get in touch</button>
     </header>
@@ -63,9 +66,7 @@
     </section>
     <button class="pill section-switch" aria-controls="about" aria-expanded="false">About me →</button>
     <div class="pointer" aria-hidden="true"></div>
-    <label class="channel-picker">Background
-      <select id="channel"><option value="0">Memphis Pop</option><option value="1">Xerox Punk</option><option value="2">Chrome Orbit</option><option value="3">Graffiti Wall</option><option value="4">Liquid Light</option></select>
-    </label>
+
     <div class="glass" aria-hidden="true"></div>
   </section>
 </main>
