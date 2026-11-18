@@ -44,8 +44,8 @@ function overlay(title,brief,action,handler){
  document.body.classList.remove('play');$('#pause').hidden=true;held=false;keys.clear();steer={x:0,y:0};
 }
 function resume(){state='flight';$('section').hidden=true;$('#pause').hidden=false;document.body.classList.add('play');last=performance.now();}
-function startLevel(){wave=0;clock=0;pickups=[];sparks=[];rapid=0;nextWave=.6;enemies=[];bolts=[];traces=[];player={x:.5,y:.82};shield=Math.min(6,shield+2);invulnerable=1;resume();}
-function restart(){enableAudio();kills=0;level=0;score=0;shield=6;$('form').hidden=true;startLevel();}
+function startLevel(){rockets=[];blasts=[];lastDraft=-1;wave=0;clock=0;pickups=[];sparks=[];rapid=0;nextWave=.6;enemies=[];bolts=[];traces=[];player={x:.5,y:.82};shield=Math.min(6,shield+2);invulnerable=1;resume();}
+function restart(){Object.keys(mods).forEach(k=>mods[k]=0);missiles=3;enableAudio();kills=0;level=0;score=0;shield=6;$('form').hidden=true;startLevel();}
 function end(won){
  state='end';overlay(won?'Route cleared':'Flight over','Final score '+score+' · '+levels[level].name,'Fly again',restart);
  $('form').hidden=false;$('input').value='';leaderboard();
@@ -59,20 +59,59 @@ function spawn(){
  for(let i=0;i<count;i++){const hp=boss?18+level*8:2;enemies.push({boss,hp,max:hp,center:(i+1)/(count+1),pattern:(wave+level)%3,phase:i*.8,age:-i*.22,fire:1.6+i*.45,depth:0,x:.5,y:.3});}
  wave++;
 }
+const mods={laser:0,triple:0,bounce:0};
+let missiles=3, rockets=[], blasts=[], lastDraft=-1;
+const upgrades=[
+ ['laser','Pulse laser','Pierces targets and increases beam damage.'],
+ ['triple','Triple shot','Adds two side beams. Additional ranks widen the spread.'],
+ ['bounce','Ricochet','Chains a hit to another nearby target per rank.'],
+ ['missiles','Missile rack','Reload three blast missiles.']
+];
+function draftUpgrade(){
+ state='draft';overlay('Choose an upgrade','Your loadout lasts for this run.','',()=>{});
+ $('#launch').hidden=true;const choices=[...upgrades];
+ while(choices.length>3)choices.splice(Math.floor(Math.random()*choices.length),1);
+ for(const [id,name,info] of choices){const button=document.createElement('button');button.textContent=name+' — '+info;
+ button.onclick=()=>{if(id==='missiles')missiles+=3;else mods[id]++;$('#upgrades').replaceChildren();$('#launch').hidden=false;resume();};
+ $('#upgrades').append(button);}
+}
+function damage(enemy,amount){
+ if(!enemies.includes(enemy))return;
+ enemy.hp-=amount;score+=10;
+ if(enemy.hp<=0){explode(enemy);score+=enemy.boss?1200:90;enemies=enemies.filter(e=>e!==enemy);}
+}
 function shoot(){
- shotDelay=rapid>0?.065:.16;tone(840,160,.09,'square',.019);traces.push({x:aim.x,y:aim.y,life:.09});
- const hit=enemies.filter(e=>e.age>=0&&Math.hypot((e.x-aim.x)*width,(e.y-aim.y)*height)<radius(e)*1.3+6).sort((a,b)=>b.depth-a.depth)[0];
- if(hit){hit.hp--;score+=10;if(!hit.hp){explode(hit);score+=hit.boss?1200:90;enemies=enemies.filter(e=>e!==hit);}}
+ shotDelay=rapid>0?.065:.16;tone(mods.laser?1120:840,160,.09,'square',.019);
+ const spread=mods.triple?[-1,0,1]:[0];
+ for(const side of spread){
+ const x=aim.x+side*(.045+.012*mods.triple),y=aim.y;
+ traces.push({x,y,life:.10,color:mods.laser?'#ff9de9':'#a1ffec'});
+ const hits=enemies.filter(e=>e.age>=0&&Math.hypot((e.x-x)*width,(e.y-y)*height)<radius(e)*1.3+6).sort((a,b)=>b.depth-a.depth);
+ for(const target of hits.slice(0,1+mods.laser)){
+ damage(target,1+mods.laser);let from=target;const visited=new Set([target]);
+ for(let n=0;n<mods.bounce;n++){const near=enemies.filter(e=>e.age>=0&&!visited.has(e)).sort((a,b)=>Math.hypot(a.x-from.x,a.y-from.y)-Math.hypot(b.x-from.x,b.y-from.y))[0];
+ if(!near||Math.hypot(near.x-from.x,near.y-from.y)>.4)break;
+ traces.push({sx:from.x,sy:from.y,x:near.x,y:near.y,color:'#ffda70',life:.16});damage(near,1);visited.add(near);from=near;}
+ }}
+}
+function missile(){if(state!=='flight'||missiles<=0)return;missiles--;rockets.push({sx:player.x,sy:player.y,x:aim.x,y:aim.y,t:0});tone(270,55,.28,'sawtooth');}
+canvas.oncontextmenu=e=>e.preventDefault();$('#missile').onclick=missile;
+function updateMissiles(dt){
+ for(const r of rockets){r.t+=dt/.32;if(r.t>=1){const radiusPx=Math.min(width,height)*.22;
+ blasts.push({x:r.x,y:r.y,life:.35,radius:radiusPx});tone(140,28,.3,'sawtooth');
+ for(const enemy of [...enemies])if(enemy.age>=0&&Math.hypot((enemy.x-r.x)*width,(enemy.y-r.y)*height)<=radiusPx)damage(enemy,7);}}
+ rockets=rockets.filter(r=>r.t<1);for(const b of blasts)b.life-=dt;blasts=blasts.filter(b=>b.life>0);
 }
 function radius(e){return Math.min(width,height)*(e.boss?.105:.039)*(.45+e.depth);}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function update(dt){
- clock+=dt;effects(dt);shotDelay-=dt;invulnerable-=dt;
+ clock+=dt;effects(dt);updateMissiles(dt);shotDelay-=dt;invulnerable-=dt;
  const dx=Number(keys.has('KeyD'))-Number(keys.has('KeyA'))+steer.x;
  const dy=Number(keys.has('KeyS'))-Number(keys.has('KeyW'))+steer.y;
  bank+=(dx*.28-bank)*Math.min(1,dt*9);player.x=clamp(player.x+dx*dt*.58,.06,.94);player.y=clamp(player.y+dy*dt*.58,.14,.93);
  if(!enemies.length){nextWave-=dt;if(nextWave<=0){
  if(wave>levels[level].waves.length){score+=shield*100;if(level===2){end(true);return;}level++;state='clear';overlay('Sector clear','Next sector · '+levels[level].name,'Continue flight',startLevel);return;}
+ if(wave>0&&wave%2===0&&lastDraft!==wave){lastDraft=wave;draftUpgrade();return;}
  spawn();nextWave=1.35;}}
  for(const e of enemies){
  e.age+=dt;if(e.age<0)continue;e.depth=Math.min(.92,e.age*.14);
@@ -85,7 +124,7 @@ function update(dt){
  if(held&&shotDelay<=0)shoot();
  for(const b of bolts){b.x+=b.vx*dt;b.y+=b.vy*dt;if(invulnerable<=0&&Math.hypot((b.x-player.x)*width,(b.y-player.y)*height)<Math.min(width,height)*.025){shield--;tone(95,28,.3,'sawtooth');invulnerable=1.2;b.y=2;if(!shield){end(false);return;}}}
  bolts=bolts.filter(b=>b.x>-.1&&b.x<1.1&&b.y>-.1&&b.y<1.1);for(const t of traces)t.life-=dt;traces=traces.filter(t=>t.life>0);
- $('output').textContent=levels[level].name+' · '+String(score).padStart(6,'0')+' · SHIELD '+shield+(rapid>0?' · RAPID '+Math.ceil(rapid):'');
+ $('output').textContent=levels[level].name+' · '+String(score).padStart(6,'0')+' · SHIELD '+shield+' · MSL '+missiles+(rapid>0?' · RAPID '+Math.ceil(rapid):'');
 }
 function line(x,y,X,Y,color){ctx.strokeStyle=color;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(X,Y);ctx.stroke();}
 function ship(x,y,size,color,angle){
@@ -109,7 +148,9 @@ function draw(){
  for(let i=0;i<17;i++){const depth=((i/17+travel*.13)%1)**2;line(0,horizon+depth*(height-horizon),width,horizon+depth*(height-horizon),stage.color);}ctx.globalAlpha=1;
  for(const e of enemies){if(e.age<0)continue;ship(e.x*width,e.y*height,radius(e),e.boss?stage.color:'#ff8998',Math.PI);if(e.boss){ctx.fillStyle=stage.color;ctx.fillRect(width*.25,height*.12,width*.5*e.hp/e.max,4);ctx.textAlign='center';ctx.fillText(stage.boss,width*.5,height*.12-6);}}
  ctx.fillStyle='#ffb45c';for(const b of bolts){ctx.beginPath();ctx.arc(b.x*width,b.y*height,5,0,Math.PI*2);ctx.fill();}
- for(const t of traces)line(player.x*width,player.y*height,t.x*width,t.y*height,'#a1ffec');
+ for(const r of rockets){const x=r.sx+(r.x-r.sx)*r.t,y=r.sy+(r.y-r.sy)*r.t;ctx.fillStyle='#ffcd68';ctx.fillRect(x*width-4,y*height-5,8,10);}
+ for(const b of blasts){ctx.strokeStyle='#ffc069';ctx.lineWidth=3;ctx.beginPath();ctx.arc(b.x*width,b.y*height,b.radius*(1-b.life/.35),0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;}
+ for(const t of traces)line((t.sx??player.x)*width,(t.sy??player.y)*height,t.x*width,t.y*height,t.color);
  for(const p of pickups){const x=p.x*width,y=p.y*height;ctx.save();ctx.translate(x,y);ctx.strokeStyle='#f7edaa';ctx.rotate(Math.PI/4);ctx.strokeRect(-9,-9,18,18);ctx.restore();ctx.fillStyle='#fff3a6';ctx.textAlign='center';ctx.fillText(p.type,x,y-16);}
  for(const s of sparks){ctx.globalAlpha=Math.min(1,s.life*2);ctx.fillStyle=stage.color;ctx.fillRect(s.x*width,s.y*height,4,3);}ctx.globalAlpha=1;
  if(invulnerable<=0||Math.floor(invulnerable*9)%2)ship(player.x*width,player.y*height,Math.min(width,height)*.044,'#e4f9ff',bank);
@@ -121,11 +162,11 @@ function frame(time){const dt=Math.min(.04,(time-last)/1000);last=time;if(state=
 window.addEventListener('keydown',e=>{if(state==='flight'){keys.add(e.code);if(e.code==='Escape')pause();}});
 window.addEventListener('keyup',e=>keys.delete(e.code));
 function point(e){aim={x:e.clientX/width,y:e.clientY/height};}
-canvas.onpointermove=point;canvas.onpointerdown=e=>{if(state!=='flight'||e.button!==0)return;point(e);held=true;canvas.setPointerCapture(e.pointerId);if(shotDelay<=0)shoot();};
+canvas.onpointermove=point;canvas.onpointerdown=e=>{if(state!=='flight')return;point(e);if(e.button===2){e.preventDefault();missile();return;}if(e.button!==0)return;held=true;canvas.setPointerCapture(e.pointerId);if(shotDelay<=0)shoot();};
 canvas.onlostpointercapture=canvas.onpointercancel=canvas.onpointerup=()=>{held=false;};
 const stick=$('#stick');function moveStick(e){const r=stick.getBoundingClientRect();steer={x:clamp((e.clientX-r.left-r.width/2)/32,-1,1),y:clamp((e.clientY-r.top-r.height/2)/32,-1,1)};}
 stick.onpointerdown=e=>{stick.setPointerCapture(e.pointerId);moveStick(e);};stick.onpointermove=e=>{if(stick.hasPointerCapture(e.pointerId))moveStick(e);};stick.onlostpointercapture=()=>{steer={x:0,y:0};};
-overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to steer, mouse to aim, hold left click to fire. On touchscreens, steer with the pad and hold a target to fire.','Launch flight',restart);
+overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to steer, mouse to aim, hold left click to fire, right-click for a blast missile. On touchscreens, steer with the pad and hold a target to fire.','Launch flight',restart);
 leaderboard();requestAnimationFrame(frame);
 
 requestAnimationFrame(()=>requestAnimationFrame(()=>$('#boot').hidden=true));

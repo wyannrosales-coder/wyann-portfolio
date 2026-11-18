@@ -180,10 +180,7 @@ const channel = document.querySelector('#channel');
 function tuneBackground() {
   screen.style.setProperty('--channel-art', `url(channel-${channel.value}.webp)`);
 }
-try {
-  const saved = localStorage.getItem('inframe-channel');
-  if (saved && /^[0-4]$/.test(saved)) channel.value = saved;
-} catch {}
+channel.value='0';
 tuneBackground();
 channel.addEventListener('change', () => {
   tuneBackground();
@@ -218,7 +215,7 @@ function changeSection(open) {
     about.scrollTop = 0;
     about.focus({preventScroll:true});
     introChannel = channel.value;
-    channel.value = aboutChannel && aboutChannel !== introChannel ? aboutChannel : String((Number(introChannel)+1)%5);
+    channel.value = '1';
     screen.classList.add('posing');
     let step = motion.matches ? 2 : 0;
     function lift() {
@@ -293,7 +290,7 @@ thoughts.addEventListener('click', event => {
     if (bubble.id === 'open-about') changeSection(true);
     else if (bubble.id === 'open-portfolio') window.openPortfolio();
     else if (bubble.href) location.assign(bubble.href);
-    else if (bubble.id === 'playground') location.assign('arcade.html');
+    else if (bubble.id === 'playground') location.assign('playground.html');
     else openPanel(bubble.dataset.panel);
   }, motion.matches ? 60 : 420);
 });
