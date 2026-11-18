@@ -170,9 +170,3 @@ overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to stee
 leaderboard();requestAnimationFrame(frame);
 
 requestAnimationFrame(()=>requestAnimationFrame(()=>$('#boot').hidden=true));
-function trackingNoise(){
- const tube=$('#tube');tube.style.setProperty('--band',(10+Math.random()*78)+'%');tube.classList.add('static');
- setTimeout(()=>tube.classList.remove('static'),100+Math.random()*140);
- setTimeout(trackingNoise,5000+Math.random()*13000);
-}
-setTimeout(trackingNoise,6500);
