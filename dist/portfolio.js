@@ -1,5 +1,10 @@
 (() => {
  const panel=document.querySelector('#portfolio'), gallery=panel.querySelector('.work-gallery'), study=panel.querySelector('.case-study');
+ const caseShell=document.createElement('section');caseShell.className='case-shell';caseShell.hidden=true;caseShell.setAttribute('role','dialog');caseShell.setAttribute('aria-modal','true');caseShell.setAttribute('aria-label','Project case study');
+ const stars=document.createElement('div');stars.className='case-stars';stars.setAttribute('aria-hidden','true');
+ for(let i=0;i<52;i++){const star=document.createElement('i');star.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${3+Math.random()*6}s;--delay:${-Math.random()*9}s`;stars.append(star);}
+ const caseNav=document.createElement('nav');caseNav.className='case-nav';caseNav.innerHTML='<button class="pill close-case">← All projects</button><span>WYANN ROSALES / SELECTED WORK</span><button class="pill case-home">Home ↗</button>';
+ study.querySelectorAll('.close-case').forEach(n=>n.remove());caseShell.append(stars,caseNav,study);document.body.append(caseShell);
  const tiles=panel.querySelector('.work-tiles'), preview=panel.querySelector('.work-preview'), photo=panel.querySelector('#work-image');
  let projects=[], active=0, serial=0, ready, entering=false, switching=false;
  const nextPeek=document.createElement('button');nextPeek.className='work-preview next-project';nextPeek.type='button';nextPeek.innerHTML='<div class="project-panorama"><img alt=""></div>';preview.parentElement.append(nextPeek);
@@ -62,22 +67,58 @@
   }
   entering=false;panel.querySelector('#view-project').focus({preventScroll:true});
  };
- function closeStudy(){study.hidden=true;gallery.hidden=false;panel.scrollTop=0;panel.querySelector('#view-project').focus({preventScroll:true});}
- function home(){if(!screen.classList.contains('in-portfolio'))return;serial++;switching=false;entering=false;document.querySelectorAll('.transition-viewport').forEach(n=>n.remove());gallery.querySelectorAll('.departing-project').forEach(n=>n.remove());nextPeek.classList.remove('waiting');preview.getAnimations().forEach(a=>a.cancel());screen.classList.remove('in-portfolio');panel.hidden=true;panel.inert=true;copy.inert=false;thoughts.inert=false;document.querySelector('.home-back').hidden=true;closeStudy();document.querySelector('#open-portfolio').focus({preventScroll:true});}
+ function closeStudy(){caseShell.hidden=true;study.hidden=true;document.querySelector('.set').inert=false;document.body.classList.remove('reading-project');gallery.hidden=false;panel.scrollTop=0;clearTimeout(crawlTimer);study.classList.remove('crawling');panel.querySelector('#view-project').focus({preventScroll:true});}
+ async function home(){
+  if(!screen.classList.contains('in-portfolio')||entering)return;
+  if(!caseShell.hidden)closeStudy();
+  entering=true;serial++;switching=false;
+  gallery.querySelectorAll('.departing-project').forEach(n=>n.remove());preview.getAnimations().forEach(a=>a.cancel());
+  let viewport,sheet;
+  if(!reduced()){
+   const bounds=screen.getBoundingClientRect();viewport=el('div',null,'transition-viewport');viewport.style.cssText=`left:${bounds.left}px;top:${bounds.top}px;width:${bounds.width}px;height:${bounds.height}px`;
+   sheet=screen.cloneNode(true);sheet.classList.remove('in-portfolio','in-about','posing');sheet.classList.add('home-sheet');sheet.inert=true;sheet.setAttribute('aria-hidden','true');
+   sheet.querySelectorAll('#about,#portfolio,header,.home-back,.section-switch,.tracking-ripple').forEach(n=>n.remove());sheet.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));viewport.append(sheet);document.body.append(viewport);
+   const reverse=departure.map(k=>({...k,offset:k.offset===undefined?undefined:1-k.offset})).reverse();
+   const returnHome=sheet.animate(reverse,transitionTiming),leave=preview.animate([...arrival].reverse(),transitionTiming);
+   await Promise.all([returnHome.finished.catch(()=>{}),leave.finished.catch(()=>{})]);leave.cancel();
+  }
+  screen.classList.remove('in-portfolio');panel.hidden=true;panel.inert=true;copy.inert=false;thoughts.inert=false;document.querySelector('.home-back').hidden=true;viewport?.remove();entering=false;document.querySelector('#open-portfolio').focus({preventScroll:true});
+ }
  document.querySelector('.home-back').addEventListener('click',home);
  function openStudy(){
-  if(!projects.length||switching||entering)return;const p=projects[active],content=panel.querySelector('#case-content');content.replaceChildren();
-  content.append(el('p',p.role,'eyebrow'),el('h2',p.name),el('p',p.subtitle,'case-deck'));
+  if(!projects.length||switching||entering)return;const p=projects[active],content=study.querySelector('#case-content');content.replaceChildren();
+  const heading=el('div',null,'case-intro');heading.append(el('p','CASE STUDY / '+String(active+1).padStart(2,'0'),'eyebrow'),el('h2',p.name),el('p',p.subtitle,'case-deck'));
+  const meta=el('div',null,'case-meta');for(const [label,value] of [['MY ROLE',p.role],['THE WORK',p.scope]]){const cell=el('div');cell.append(el('small',label),el('p',value));meta.append(cell);}heading.append(meta);content.append(heading);
   const hero=el('img');hero.src=p.cover;hero.alt=p.name+' project overview';hero.className='case-hero';content.append(hero);
-  const copyBlock=el('div',null,'case-copy');
-  p.content.forEach(([tag,text])=>{if(text===p.name)return;copyBlock.append(el(tag==='p'?'p':'h3',text));});content.append(copyBlock);
-  const images=el('div',null,'case-images');p.images.forEach((url,i)=>{const im=el('img');im.src=url;im.alt=p.name+' design detail '+(i+1);im.loading='lazy';images.append(im);});content.append(images);
-  const source=el('a','Original case study ↗');source.href=p.source;source.target='_blank';source.rel='noopener';content.append(source);
-  gallery.hidden=true;study.hidden=false;panel.scrollTop=0;study.focus({preventScroll:true});
-  if(!reduced())study.animate([{opacity:0,transform:'translateY(35px)'},{opacity:1,transform:'none'}],{duration:450,easing:'ease-out'});
+  let section=el('section',null,'case-chapter'),prose=el('div',null,'chapter-copy'),chapter=0,imageIndex=0;
+  function flush(){if(!prose.childNodes.length)return;section.append(prose);const visuals=el('div',null,'chapter-images');for(let k=0;k<2&&imageIndex<p.images.length;k++){const im=el('img');im.src=p.images[imageIndex++];im.alt=p.name+' design detail '+imageIndex;im.loading='lazy';visuals.append(im);}section.append(visuals);content.append(section);section=el('section',null,'case-chapter');prose=el('div',null,'chapter-copy');}
+  for(const [tag,raw] of p.content){
+   let text=raw.replace(/\[([\d.]+)\]/g,'$1').trim();if(text===p.name)continue;
+   const headingLike=tag!=='p'||(text.length<60&&text.endsWith(':'));
+   if(headingLike){if(prose.querySelector('p,ul'))flush();if(!prose.children.length){chapter++;prose.append(el('small',String(chapter).padStart(2,'0'),'chapter-number'));}prose.append(el('h3',text.replace(/:$/,'')));continue;}
+   if(/^(?:[-•]|\d+\.)\s/.test(text)){let list=prose.lastElementChild;if(!list||list.tagName!=='UL'){list=el('ul');prose.append(list);}list.append(el('li',text.replace(/^(?:[-•]|\d+\.)\s*/,'')));continue;}
+   const paragraph=el('p');const colon=text.indexOf(':');if(colon>0&&colon<65){paragraph.append(el('strong',text.slice(0,colon+1)),document.createTextNode(' '+text.slice(colon+1).trim()));}else paragraph.textContent=text;prose.append(paragraph);
+  }
+  flush();
+  let firstGallery=true;
+  while(imageIndex<p.images.length){const more=el('section',null,'case-gallery');if(firstGallery){more.append(el('h3','A closer look'));firstGallery=false;}const images=el('div',null,'chapter-images');for(let i=0;i<2&&imageIndex<p.images.length;i++){const im=el('img');im.src=p.images[imageIndex++];im.alt=p.name+' interface detail '+imageIndex;im.loading='lazy';images.append(im);}more.append(images);content.append(more);}
+  const footer=el('footer',null,'case-end');footer.append(el('p','Thanks for taking a closer look.'));const source=el('a','Original case study ↗');source.href=p.source;source.target='_blank';source.rel='noopener';const back=el('button','← Back to selected work','pill');back.onclick=closeStudy;footer.append(source,back);content.append(footer);
+  gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;document.querySelector('.set').inert=true;document.body.classList.add('reading-project');study.focus({preventScroll:true});
+  if(!reduced())content.animate([{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:500,easing:'ease-out'});
  }
+ let crawlTimer,crawlFrame;
+ function crawl(){
+  if(reduced()||study.hidden)return;
+  study.classList.add('crawling');const origin=study.scrollTop+study.clientHeight*.82;
+  for(const child of study.querySelector('#case-content').children){const y=child.offsetTop;const visible=y+child.offsetHeight>study.scrollTop-study.clientHeight&&y<study.scrollTop+study.clientHeight*2;child.style.setProperty('--crawl-origin',(origin-y)+'px');child.classList.toggle('crawl-active',visible);}
+  clearTimeout(crawlTimer);crawlTimer=setTimeout(()=>study.classList.remove('crawling'),180);
+ }
+ study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
+ motion.addEventListener('change',()=>{clearTimeout(crawlTimer);study.classList.remove('crawling');});
+ caseNav.querySelector('.close-case').onclick=closeStudy;caseNav.querySelector('.case-home').onclick=home;
+ caseShell.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const items=[...caseShell.querySelectorAll('button,a[href],[tabindex="0"]')].filter(n=>!n.disabled);const first=items[0],last=items.at(-1);if(event.shiftKey&&(document.activeElement===first||document.activeElement===study)){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
  preview.onclick=openStudy;panel.querySelector('#view-project').onclick=openStudy;
- panel.querySelectorAll('.close-case').forEach(b=>b.onclick=closeStudy);
+ caseShell.querySelectorAll('.close-case').forEach(b=>b.onclick=closeStudy);
  document.addEventListener('keydown',e=>{if(!screen.classList.contains('in-portfolio')||dialog.open)return;if(e.key==='Escape'){study.hidden?home():closeStudy();}if(study.hidden&&projects.length&&!e.target.closest('select,details')){if(e.key==='ArrowRight'){e.preventDefault();select((active+1)%projects.length);}if(e.key==='ArrowLeft'){e.preventDefault();select((active+projects.length-1)%projects.length,-1);}}});
  nextPeek.onclick=()=>select((active+1)%projects.length);
  let lastWheel=0,wheelAmount=0,wheelConsumed=false;
