@@ -9,8 +9,9 @@ const status = document.querySelector('#copy-status');
 const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const panels = {
+  'My process': ['I start with user research, map the key flows, and test ideas through high-fidelity prototypes. For Dwell, I worked with developers through launch and tracked adoption to guide improvements.'],
   Labs: ['A space for creative coding and web experiments.'],
-  Studio: ['Jules is a creative designer and developer.', 'Pitch us an idea'],
+  Studio: ['Wyann is a creative designer and developer.', 'Pitch us an idea'],
   Openings: ['Have a role or collaboration in mind? Draft a note to introduce yourself.', 'Come work here'],
   Shop: ['There are no products listed in this preview.'],
   'Get in touch': ['Choose how you’d like to start the conversation.', 'Pitch us an idea', 'Send a brief hello'],
@@ -202,6 +203,7 @@ function showPose(i) {
 function changeSection(open) {
   if (open === showingAbout) return;
   showingAbout = open;
+  document.querySelector('.thoughts').inert = open;
   clearTimeout(poseTimer);
   screen.classList.toggle('in-about',open);
   about.inert = !open; copy.inert = open;
@@ -231,6 +233,7 @@ function changeSection(open) {
   } else {
     aboutChannel=channel.value; channel.value=introChannel;
     screen.classList.remove('posing'); showPose(-1);
+    document.querySelector('#open-about').focus({preventScroll:true});
   }
   tuneBackground();
 }
@@ -264,3 +267,25 @@ screen.addEventListener('touchend',event=>{
   if(Math.abs(dx)>55 && Math.abs(dx)>1.6*Math.abs(end.clientY-swipeStart.clientY)) changeSection(dx<0);
   swipeStart=null;
 },{passive:true});
+
+document.querySelector('#open-about').addEventListener('click', () => changeSection(true));
+document.querySelector('#playground').addEventListener('click', () => {
+  title.textContent = 'CRT Playground';
+  description.textContent = 'Tune the background channel.';
+  draft.hidden = true;
+  actions.replaceChildren(...Array.from(channel.options, option => {
+    const button = document.createElement('button');
+    button.className = 'pill';
+    button.textContent = option.text;
+    button.onclick = () => {
+      channel.value = option.value;
+      channel.dispatchEvent(new Event('change'));
+      dialog.close();
+    };
+    return button;
+  }));
+  dialog.showModal();
+});
+about.addEventListener('scroll', () => {
+  about.classList.toggle('cv-scrolled', about.scrollTop > 20);
+}, {passive:true});
