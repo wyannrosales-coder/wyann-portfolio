@@ -697,3 +697,10 @@ body.reading-project{overflow:hidden;}
 .case-shell .case-study{-webkit-overflow-scrolling:touch;}
 @media(max-width:760px){.crawling #case-content>.crawl-active{transform:perspective(2800px) rotateX(50deg) scale(.92);}}
 @media(prefers-reduced-motion:reduce){.crawling #case-content>.crawl-active{transform:none;}}
+/* A single perspective plane keeps every chapter on the same horizon. */
+.case-track{display:flow-root;overflow:clip;}
+#case-content>* , .crawling #case-content>.crawl-active{transform:none!important;transition:none!important;}
+#case-content{transform-origin:50% var(--plane-origin,50%);transform:perspective(var(--plane-perspective,1400px)) rotateX(0deg) scale(1);transition:transform .6s cubic-bezier(.2,.7,.2,1);}
+.crawling #case-content{transform:perspective(var(--plane-perspective,1400px)) rotateX(64deg) scale(.88);transition-duration:.3s;}
+@media(max-width:760px){.crawling #case-content{transform:perspective(var(--plane-perspective,900px)) rotateX(50deg) scale(.92);}}
+@media(prefers-reduced-motion:reduce){#case-content,.crawling #case-content{transform:none;transition:none;clip-path:none!important;}}

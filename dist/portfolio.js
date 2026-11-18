@@ -5,6 +5,7 @@
  for(let i=0;i<52;i++){const star=document.createElement('i');star.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--duration:${3+Math.random()*6}s;--delay:${-Math.random()*9}s`;stars.append(star);}
  const caseNav=document.createElement('nav');caseNav.className='case-nav';caseNav.innerHTML='<button class="pill close-case">← All projects</button><span>WYANN ROSALES / SELECTED WORK</span><button class="pill case-home">Home ↗</button>';
  study.querySelectorAll('.close-case').forEach(n=>n.remove());caseShell.append(stars,caseNav,study);document.body.append(caseShell);
+ const crawlContent=study.querySelector('#case-content'),crawlTrack=document.createElement('div');crawlTrack.className='case-track';crawlContent.before(crawlTrack);crawlTrack.append(crawlContent);
  const tiles=panel.querySelector('.work-tiles'), preview=panel.querySelector('.work-preview'), photo=panel.querySelector('#work-image');
  let projects=[], active=0, serial=0, ready, entering=false, switching=false;
  const nextPeek=document.createElement('button');nextPeek.className='work-preview next-project';nextPeek.type='button';nextPeek.innerHTML='<div class="project-panorama"><img alt=""></div>';preview.parentElement.append(nextPeek);
@@ -79,7 +80,7 @@
   try{const animation=sheet.animate(sequence,{duration:turnOn?850:650,easing:'cubic-bezier(.65,0,.3,1)',fill:'both'});line.animate(turnOn?[{opacity:1,transform:'scaleX(.02)'},{opacity:.7,transform:'scaleX(1)',offset:.3},{opacity:0,transform:'scaleX(1)'}]:[{opacity:0},{opacity:.9,offset:.55},{opacity:0,transform:'scaleX(.01)'}],{duration:turnOn?850:650,fill:'both'});await animation.finished;if(!turnOn)swap();}finally{overlay.remove();}
  }
  async function closeStudy(){
-  if(powerBusy||caseShell.hidden)return;powerBusy=true;stopMomentum();
+  if(powerBusy||caseShell.hidden)return;powerBusy=true;stopMomentum();resetCrawl();
   try{await powerTransition(true,()=>{caseShell.hidden=true;study.hidden=true;document.querySelector('.set').inert=false;document.body.classList.remove('reading-project');gallery.hidden=false;panel.scrollTop=0;clearTimeout(crawlTimer);study.classList.remove('crawling');});panel.querySelector('#view-project').focus({preventScroll:true});}finally{powerBusy=false;}
  }
  async function home(){
@@ -118,18 +119,36 @@
   let firstGallery=true;
   while(imageIndex<p.images.length){const more=el('section',null,'case-gallery');if(firstGallery){more.append(el('h3','A closer look'));firstGallery=false;}const images=el('div',null,'chapter-images');for(let i=0;i<2&&imageIndex<p.images.length;i++){const im=el('img');im.src=p.images[imageIndex++];im.alt=p.name+' interface detail '+imageIndex;im.loading='lazy';images.append(im);}more.append(images);content.append(more);}
   const footer=el('footer',null,'case-end');footer.append(el('p','Thanks for taking a closer look.'));const source=el('a','Original case study ↗');source.href=p.source;source.target='_blank';source.rel='noopener';const back=el('button','← Back to selected work','pill');back.onclick=closeStudy;footer.append(source,back);content.append(footer);
-  try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});study.focus({preventScroll:true});}finally{powerBusy=false;}
+  try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;resetCrawl();document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});study.focus({preventScroll:true});}finally{powerBusy=false;}
   if(!reduced())content.animate([{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:500,easing:'ease-out'});
  }
- let crawlTimer,crawlFrame;
+ let crawlTimer,crawlFrame,unclipTimer,lastScrollTime=0,gestureStart=0,lastScrollTop=0;
+ function resetCrawl(){clearTimeout(crawlTimer);clearTimeout(unclipTimer);cancelAnimationFrame(crawlFrame);study.classList.remove('crawling');crawlContent.style.clipPath='none';gestureStart=lastScrollTop=study.scrollTop;lastScrollTime=0;}
+ function positionCrawl(){
+  const h=study.clientHeight,origin=study.scrollTop+h*.82;
+  const angle=innerWidth<=760?50:64;
+  crawlContent.style.setProperty('--plane-origin',origin+'px');
+  crawlContent.style.setProperty('--plane-perspective',(h*.82*Math.tan(angle*Math.PI/180))+'px');
+  const bottom=Math.max(0,crawlContent.offsetHeight-study.scrollTop-h*1.5);
+  crawlContent.style.clipPath=`inset(0 0 ${bottom}px 0)`;
+ }
  function crawl(){
   if(reduced()||study.hidden)return;
-  study.classList.add('crawling');const origin=study.scrollTop+study.clientHeight*.82;
-  for(const child of study.querySelector('#case-content').children){const y=child.offsetTop;const visible=y+child.offsetHeight>study.scrollTop-study.clientHeight&&y<study.scrollTop+study.clientHeight*2;child.style.setProperty('--crawl-origin',(origin-y)+'px');child.classList.toggle('crawl-active',visible);}
-  clearTimeout(crawlTimer);crawlTimer=setTimeout(()=>study.classList.remove('crawling'),680);
+  const now=performance.now(),top=study.scrollTop;
+  if(now-lastScrollTime>250&&!momentumFrame)gestureStart=lastScrollTop;
+  lastScrollTime=now;lastScrollTop=top;
+  const longScroll=Math.abs(top-gestureStart)>study.clientHeight*.18;
+  if(longScroll||study.classList.contains('crawling')){
+   clearTimeout(unclipTimer);positionCrawl();study.classList.add('crawling');
+   clearTimeout(crawlTimer);crawlTimer=setTimeout(()=>{
+    study.classList.remove('crawling');gestureStart=lastScrollTop=study.scrollTop;
+    unclipTimer=setTimeout(()=>{crawlContent.style.clipPath='none';},650);
+   },680);
+  }
  }
  study.addEventListener('scroll',()=>{cancelAnimationFrame(crawlFrame);crawlFrame=requestAnimationFrame(crawl);},{passive:true});
- motion.addEventListener('change',()=>{clearTimeout(crawlTimer);study.classList.remove('crawling');});
+ motion.addEventListener('change',resetCrawl);
+ window.addEventListener('resize',()=>{if(study.classList.contains('crawling'))positionCrawl();});
  let momentumFrame=0,scrollTarget=0,previousTime=0;
  function stopMomentum(){cancelAnimationFrame(momentumFrame);momentumFrame=0;previousTime=0;}
  function glide(time){
@@ -142,7 +161,7 @@
  }
  study.addEventListener('wheel',event=>{
   if(reduced()||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
-  event.preventDefault();if(!momentumFrame)scrollTarget=study.scrollTop;
+  event.preventDefault();if(!momentumFrame){scrollTarget=study.scrollTop;if(performance.now()-lastScrollTime>250)gestureStart=lastScrollTop=study.scrollTop;}
   const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?study.clientHeight:1);
   scrollTarget=Math.max(0,Math.min(scrollTarget+delta,study.scrollHeight-study.clientHeight));
   if(!momentumFrame){previousTime=0;momentumFrame=requestAnimationFrame(glide);}
