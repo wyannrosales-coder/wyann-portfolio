@@ -191,7 +191,7 @@ const copy = document.querySelector('.copy');
 const switcher = document.querySelector('.section-switch');
 const poses = Array.from({length:3}, (_,i) => {
   const image = new Image();
-  image.className = 'pose'; image.alt = ''; image.src = 'chin-' + i + '.webp';
+  image.className = 'pose'; image.alt = ''; image.src = 'chin-' + i + '.webp?v=left2';
   picture.append(image); return image;
 });
 let showingAbout = false, poseTimer, wheelLock = 0;

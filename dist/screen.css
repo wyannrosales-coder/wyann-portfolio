@@ -244,7 +244,7 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
 .screen.in-about .copy { transform:translateX(-115%);opacity:0; }
 .screen.in-about .pointer {visibility:hidden;}
 .picture {transition:right var(--travel) ease,width var(--travel) ease;pointer-events:auto;}
-.screen.in-about .picture {width:min(36%,65vh);right:50%;translate:50% 0;transition:right var(--travel) ease,width var(--travel) ease,translate var(--travel) ease;}
+.screen.in-about .picture {width:min(48%,83vh);right:50%;translate:50% 0;transition:right var(--travel) ease,width var(--travel) ease,translate var(--travel) ease;}
 .picture .pose {position:absolute;inset:0;visibility:hidden;}
 .screen.posing .picture > img:first-child,.screen.posing .glitch-band {visibility:hidden;}
 .picture .pose.visible {visibility:visible;}
@@ -266,7 +266,7 @@ textarea { display: block; margin: 8px 0 15px; width: 100%; padding: 12px; color
   .channel-picker {max-width:62%;font-size:11px;margin-left:5%;}
   #about {display:none;}
   .screen.in-about .copy {display:none;}
-  .screen.in-about .picture {position:relative;inset:auto;translate:none;width:min(78%,350px);margin:18px auto 0;align-self:center;}
+  .screen.in-about .picture {position:relative;inset:auto;translate:none;width:min(94%,445px);margin:18px auto 0;align-self:center;}
   .screen.in-about #about {display:grid;position:relative;inset:auto;order:2;margin:0 5% 20px;gap:10px;}
   .bio,.career {width:100%;}
   .bio h2 br {display:none;} .bio h2 br::after {content:" ";}
