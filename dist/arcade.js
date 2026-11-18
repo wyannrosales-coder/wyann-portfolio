@@ -10,8 +10,33 @@ let state='title',level=0,score=0,shield=6,player={x:.5,y:.82},aim={x:.5,y:.4};
 let enemies=[],bolts=[],traces=[],wave=0,clock=0,nextWave=1,shotDelay=0,invulnerable=0,held=false;
 let steer={x:0,y:0},width,height,last=0,travel=0,bank=0,scores=[];
 try { scores=JSON.parse(localStorage.getItem('vector-run-scores')||'[]').filter(row=>/^[A-Z]{3}$/.test(row.name)&&Number.isFinite(row.score)); } catch {}
+let audioContext, muted=false, pickups=[], sparks=[], kills=0, rapid=0, beat=0;
+function tone(from,to,duration,type='triangle',volume=.045){
+ if(muted||!audioContext||audioContext.state!=='running')return;
+ const time=audioContext.currentTime,osc=audioContext.createOscillator(),gain=audioContext.createGain();
+ osc.type=type;osc.frequency.setValueAtTime(from,time);osc.frequency.exponentialRampToValueAtTime(to,time+duration);
+ gain.gain.setValueAtTime(volume,time);gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+ osc.connect(gain);gain.connect(audioContext.destination);osc.start(time);osc.stop(time+duration);
+}
+function enableAudio(){try{audioContext??=new AudioContext();audioContext.resume().catch(()=>{});}catch{}}
+$('#audio').onclick=()=>{muted=!muted;$('#audio').textContent=muted?'Sound off':'Sound on';if(!muted)enableAudio();};
+function explode(enemy){
+ for(let i=0;i<18;i++){const angle=Math.random()*Math.PI*2;sparks.push({x:enemy.x,y:enemy.y,vx:Math.cos(angle)*.12,vy:Math.sin(angle)*.18,life:.5+Math.random()*.4});}
+ tone(160,32,.27,'sawtooth');kills++;
+ if(!enemy.boss&&kills%4===0)pickups.push({x:enemy.x,y:enemy.y,type:kills%8===0?'SHIELD':'RAPID'});
+}
+function effects(dt){
+ rapid=Math.max(0,rapid-dt);beat-=dt;
+ if(beat<=0){beat=.36;tone([98,123,147,185][Math.floor(clock/.36)%4],65,.14,'triangle',.018);}
+ for(const spark of sparks){spark.x+=spark.vx*dt;spark.y+=spark.vy*dt;spark.life-=dt;}
+ sparks=sparks.filter(s=>s.life>0);
+ pickups=pickups.filter(p=>{p.y+=dt*.15;if(Math.hypot((player.x-p.x)*width,(player.y-p.y)*height)<Math.min(width,height)*.073){
+ if(p.type==='SHIELD')shield=Math.min(6,shield+2);else rapid=8;tone(420,1200,.24);score+=50;return false;}return p.y<1.05;});
+}
 function leaderboard(){
  const board=$('#board');board.replaceChildren();const label=document.createElement('small');label.textContent='HIGH SCORES · THIS DEVICE';board.append(label);
+ $('#record').textContent='HI SCORE '+String(scores[0]?.score||0).padStart(6,'0')+(scores.length?' · '+scores[0].name:'');
+ if(!scores.length){const empty=document.createElement('p');empty.textContent='No scores yet. Finish a run and enter your initials.';board.append(empty);}
  const list=document.createElement('ol');for(const row of scores.slice(0,5)){const item=document.createElement('li');item.textContent=row.name+'   '+row.score.toString().padStart(6,'0');list.append(item);}board.append(list);
 }
 function overlay(title,brief,action,handler){
@@ -19,8 +44,8 @@ function overlay(title,brief,action,handler){
  document.body.classList.remove('play');$('#pause').hidden=true;held=false;keys.clear();steer={x:0,y:0};
 }
 function resume(){state='flight';$('section').hidden=true;$('#pause').hidden=false;document.body.classList.add('play');last=performance.now();}
-function startLevel(){wave=0;clock=0;nextWave=.6;enemies=[];bolts=[];traces=[];player={x:.5,y:.82};shield=Math.min(6,shield+2);invulnerable=1;resume();}
-function restart(){level=0;score=0;shield=6;$('form').hidden=true;startLevel();}
+function startLevel(){wave=0;clock=0;pickups=[];sparks=[];rapid=0;nextWave=.6;enemies=[];bolts=[];traces=[];player={x:.5,y:.82};shield=Math.min(6,shield+2);invulnerable=1;resume();}
+function restart(){enableAudio();kills=0;level=0;score=0;shield=6;$('form').hidden=true;startLevel();}
 function end(won){
  state='end';overlay(won?'Route cleared':'Flight over','Final score '+score+' · '+levels[level].name,'Fly again',restart);
  $('form').hidden=false;$('input').value='';leaderboard();
@@ -31,18 +56,18 @@ function pause(){if(state!=='flight')return;state='paused';overlay('Paused',leve
 $('#pause').onclick=pause;window.addEventListener('blur',pause);
 function spawn(){
  const boss=wave===levels[level].waves.length,count=boss?1:levels[level].waves[wave];
- for(let i=0;i<count;i++){const hp=boss?18+level*8:2;enemies.push({boss,hp,max:hp,center:(i+1)/(count+1),phase:i*.8,age:-i*.22,fire:1.6+i*.45,depth:0,x:.5,y:.3});}
+ for(let i=0;i<count;i++){const hp=boss?18+level*8:2;enemies.push({boss,hp,max:hp,center:(i+1)/(count+1),pattern:(wave+level)%3,phase:i*.8,age:-i*.22,fire:1.6+i*.45,depth:0,x:.5,y:.3});}
  wave++;
 }
 function shoot(){
- shotDelay=.13;traces.push({x:aim.x,y:aim.y,life:.09});
+ shotDelay=rapid>0?.065:.16;tone(840,160,.09,'square',.019);traces.push({x:aim.x,y:aim.y,life:.09});
  const hit=enemies.filter(e=>e.age>=0&&Math.hypot((e.x-aim.x)*width,(e.y-aim.y)*height)<radius(e)*1.3+6).sort((a,b)=>b.depth-a.depth)[0];
- if(hit){hit.hp--;score+=10;if(!hit.hp){score+=hit.boss?1200:90;enemies=enemies.filter(e=>e!==hit);}}
+ if(hit){hit.hp--;score+=10;if(!hit.hp){explode(hit);score+=hit.boss?1200:90;enemies=enemies.filter(e=>e!==hit);}}
 }
 function radius(e){return Math.min(width,height)*(e.boss?.105:.039)*(.45+e.depth);}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function update(dt){
- clock+=dt;shotDelay-=dt;invulnerable-=dt;
+ clock+=dt;effects(dt);shotDelay-=dt;invulnerable-=dt;
  const dx=Number(keys.has('KeyD'))-Number(keys.has('KeyA'))+steer.x;
  const dy=Number(keys.has('KeyS'))-Number(keys.has('KeyW'))+steer.y;
  bank+=(dx*.28-bank)*Math.min(1,dt*9);player.x=clamp(player.x+dx*dt*.58,.06,.94);player.y=clamp(player.y+dy*dt*.58,.14,.93);
@@ -52,13 +77,15 @@ function update(dt){
  for(const e of enemies){
  e.age+=dt;if(e.age<0)continue;e.depth=Math.min(.92,e.age*.14);
  e.x=.5+(e.center-.5)*(.2+e.depth)+Math.sin(e.age*(.8+level*.25)+e.phase)*(e.boss?.24:.075);
- e.y=.2+e.depth*.15+Math.sin(e.age+e.phase)*.085;e.fire-=dt;
+ e.y=.2+e.depth*.15+Math.sin(e.age+e.phase)*.085;if(!e.boss&&e.pattern===1){e.y+=Math.abs(e.center-.5)*.35;e.x+=Math.sin(e.age*1.8)*.08;}
+ if(!e.boss&&e.pattern===2){e.x=.5+Math.cos(e.age*.75+e.phase)*.31;e.y=.33+Math.sin(e.age*.75+e.phase)*.15;}
+ e.fire-=dt;
  if(e.fire<=0){e.fire=(e.boss?.92:3.8)-level*.12;const angle=Math.atan2((player.y-e.y)*height,(player.x-e.x)*width);
  const spread=e.boss?level+1:0;for(let n=-spread;n<=spread;n++){const speed=Math.min(width,height)*(.31+level*.035);bolts.push({x:e.x,y:e.y,vx:Math.cos(angle+n*.19)*speed/width,vy:Math.sin(angle+n*.19)*speed/height});}}}
  if(held&&shotDelay<=0)shoot();
- for(const b of bolts){b.x+=b.vx*dt;b.y+=b.vy*dt;if(invulnerable<=0&&Math.hypot((b.x-player.x)*width,(b.y-player.y)*height)<Math.min(width,height)*.025){shield--;invulnerable=1.2;b.y=2;if(!shield){end(false);return;}}}
+ for(const b of bolts){b.x+=b.vx*dt;b.y+=b.vy*dt;if(invulnerable<=0&&Math.hypot((b.x-player.x)*width,(b.y-player.y)*height)<Math.min(width,height)*.025){shield--;tone(95,28,.3,'sawtooth');invulnerable=1.2;b.y=2;if(!shield){end(false);return;}}}
  bolts=bolts.filter(b=>b.x>-.1&&b.x<1.1&&b.y>-.1&&b.y<1.1);for(const t of traces)t.life-=dt;traces=traces.filter(t=>t.life>0);
- $('output').textContent=levels[level].name+' · '+String(score).padStart(6,'0')+' · SHIELD '+shield;
+ $('output').textContent=levels[level].name+' · '+String(score).padStart(6,'0')+' · SHIELD '+shield+(rapid>0?' · RAPID '+Math.ceil(rapid):'');
 }
 function line(x,y,X,Y,color){ctx.strokeStyle=color;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(X,Y);ctx.stroke();}
 function ship(x,y,size,color,angle){
@@ -69,11 +96,22 @@ function ship(x,y,size,color,angle){
 function draw(){
  const stage=levels[level],horizon=height*.38,gradient=ctx.createLinearGradient(0,0,0,height);gradient.addColorStop(0,'#06081b');gradient.addColorStop(.4,stage.sky);gradient.addColorStop(1,'#080c21');ctx.fillStyle=gradient;ctx.fillRect(0,0,width,height);
  for(let i=1;i<90;i++){const z=((i*.073+travel*.12)%1);ctx.fillStyle='#cadbfc';ctx.fillRect(width*(.5+Math.sin(i*78)*z),height*(.38+Math.cos(i*41)*z),1+z,1+z);}
+ // Faceted ridges and a banded planet give each sector its own skyline.
+ const sunX=width*(.72-level*.18),sunY=horizon*.58,r=Math.min(width,height)*.09;
+ ctx.save();ctx.beginPath();ctx.arc(sunX,sunY,r,0,Math.PI*2);ctx.clip();
+ const planet=ctx.createLinearGradient(0,sunY-r,0,sunY+r);planet.addColorStop(0,stage.color);planet.addColorStop(1,stage.sky);
+ ctx.fillStyle=planet;ctx.fillRect(sunX-r,sunY-r,2*r,2*r);
+ ctx.fillStyle='#090d223f';for(let j=0;j<6;j++)ctx.fillRect(sunX-r,sunY+j*r/7,2*r,2+j*.4);ctx.restore();
+ const span=width/9,shift=travel*9%span;
+ for(let i=-1;i<11;i++){const x=i*span-shift,peak=horizon-height*(.04+.09*Math.abs(Math.sin((i+Math.floor(travel*9/span))*4.3+level)));
+ for(let side=0;side<2;side++){ctx.fillStyle=side?stage.sky:'#101729';ctx.beginPath();ctx.moveTo(x+span*.54,peak);ctx.lineTo(x+span*(side?.54:0),horizon);ctx.lineTo(x+span*(side?1:.54),horizon);ctx.fill();}}
  ctx.globalAlpha=.34;for(let i=-9;i<=9;i++)line(width*.5,horizon,width*(.5+i*.24),height,stage.color);
  for(let i=0;i<17;i++){const depth=((i/17+travel*.13)%1)**2;line(0,horizon+depth*(height-horizon),width,horizon+depth*(height-horizon),stage.color);}ctx.globalAlpha=1;
  for(const e of enemies){if(e.age<0)continue;ship(e.x*width,e.y*height,radius(e),e.boss?stage.color:'#ff8998',Math.PI);if(e.boss){ctx.fillStyle=stage.color;ctx.fillRect(width*.25,height*.12,width*.5*e.hp/e.max,4);ctx.textAlign='center';ctx.fillText(stage.boss,width*.5,height*.12-6);}}
  ctx.fillStyle='#ffb45c';for(const b of bolts){ctx.beginPath();ctx.arc(b.x*width,b.y*height,5,0,Math.PI*2);ctx.fill();}
  for(const t of traces)line(player.x*width,player.y*height,t.x*width,t.y*height,'#a1ffec');
+ for(const p of pickups){const x=p.x*width,y=p.y*height;ctx.save();ctx.translate(x,y);ctx.strokeStyle='#f7edaa';ctx.rotate(Math.PI/4);ctx.strokeRect(-9,-9,18,18);ctx.restore();ctx.fillStyle='#fff3a6';ctx.textAlign='center';ctx.fillText(p.type,x,y-16);}
+ for(const s of sparks){ctx.globalAlpha=Math.min(1,s.life*2);ctx.fillStyle=stage.color;ctx.fillRect(s.x*width,s.y*height,4,3);}ctx.globalAlpha=1;
  if(invulnerable<=0||Math.floor(invulnerable*9)%2)ship(player.x*width,player.y*height,Math.min(width,height)*.044,'#e4f9ff',bank);
  if(state==='flight'){ctx.strokeStyle='#affff0';ctx.beginPath();ctx.arc(aim.x*width,aim.y*height,12,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(aim.x*width-1,aim.y*height-1,3,3);}
 }
@@ -89,3 +127,11 @@ const stick=$('#stick');function moveStick(e){const r=stick.getBoundingClientRec
 stick.onpointerdown=e=>{stick.setPointerCapture(e.pointerId);moveStick(e);};stick.onpointermove=e=>{if(stick.hasPointerCapture(e.pointerId))moveStick(e);};stick.onlostpointercapture=()=>{steer={x:0,y:0};};
 overlay('Vector Run','Fly three sectors and defeat their guardians. WASD to steer, mouse to aim, hold left click to fire. On touchscreens, steer with the pad and hold a target to fire.','Launch flight',restart);
 leaderboard();requestAnimationFrame(frame);
+
+requestAnimationFrame(()=>requestAnimationFrame(()=>$('#boot').hidden=true));
+function trackingNoise(){
+ const tube=$('#tube');tube.style.setProperty('--band',(10+Math.random()*78)+'%');tube.classList.add('static');
+ setTimeout(()=>tube.classList.remove('static'),100+Math.random()*140);
+ setTimeout(trackingNoise,5000+Math.random()*13000);
+}
+setTimeout(trackingNoise,6500);
