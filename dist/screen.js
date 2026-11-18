@@ -64,7 +64,7 @@ document.querySelector('#copy-message').addEventListener('click', async () => {
 const picture = document.querySelector('.picture');
 const portraits = Array.from({length: 9}, (_, index) => {
   const image = new Image();
-  image.src = 'portrait-' + index + '.webp?v=smile1';
+  image.src = 'portrait-' + index + '.webp?v=subtle2';
   return image;
 });
 const face = document.createElement('img');
@@ -131,7 +131,7 @@ const variants = {};
 for (const effect of ['grain', 'bleed']) {
   variants[effect] = portraits.map((_, index) => {
     const image = new Image();
-    image.src = effect + '-' + index + '.webp?v=smile1';
+    image.src = effect + '-' + index + '.webp?v=subtle2';
     return image;
   });
 }
