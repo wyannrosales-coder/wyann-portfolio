@@ -67,38 +67,66 @@ const strips = Array.from({length: 9}, (_, i) => {
   image.src = 'gaze-' + i + '.webp';
   return image;
 });
-let x = 0, y = 4, startX = x, startY = y, targetX = x, targetY = y;
-let began = 0, frame = 0;
-function render(now) {
-  const t = motion.matches ? 1 : Math.min(1, (now - began) / 180);
-  const ease = t * (2 - t);
-  x = startX + (targetX - startX) * ease;
-  y = startY + (targetY - startY) * ease;
-  const strip = strips[Math.round(y)];
-  if (strip.naturalWidth) {
-    picture.style.backgroundImage = 'url(' + strip.src + ')';
-    picture.style.backgroundSize = '900% 100%';
-    picture.style.backgroundPosition = (Math.round(x) * 12.5) + '% center';
+// Blend the four surrounding photographed poses at the display refresh rate.
+const canvas = document.createElement('canvas');
+const blend = document.createElement('canvas');
+const size = 400;
+for (const surface of [canvas, blend]) surface.width = surface.height = size;
+picture.append(canvas);
+const output = canvas.getContext('2d');
+const buffer = blend.getContext('2d');
+let x = 0, y = 4, bodyX = 0, bodyY = 4;
+let targetX = x, targetY = y, last = 0, frame = 0;
+function paint() {
+  const row = Math.floor(y), col = Math.floor(x);
+  const fx = x - col, fy = y - row;
+  const weights = [(1-fx)*(1-fy), fx*(1-fy), (1-fx)*fy, fx*fy];
+  if (!strips[row].naturalWidth || !strips[Math.min(8,row+1)].naturalWidth) return;
+  buffer.clearRect(0,0,size,size);
+  buffer.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 4; i++) {
+    if (!weights[i]) continue;
+    buffer.globalAlpha = weights[i];
+    buffer.drawImage(strips[Math.min(8,row+(i>>1))], Math.min(8,col+(i%2))*size,0,size,size,0,0,size,size);
   }
-  frame = t < 1 ? requestAnimationFrame(render) : 0;
+  // Pivot at the base of the torso. The far shoulder narrows and drops
+  // slightly while the near shoulder rises with the delayed body turn.
+  output.clearRect(0,0,size,size);
+  const yaw = (bodyX-4)/4, pitch = (bodyY-4)/4;
+  for (let sy = 0; sy < size; sy += 4) {
+    const v = sy/size;
+    const shoulder = Math.exp(-Math.pow((v-.66)/.31,2));
+    const offset = yaw * (3*(1-v) + 9*shoulder);
+    const width = 1 - .025*Math.abs(yaw)*shoulder;
+    output.setTransform(width, yaw*.023*shoulder, 0, 1,
+      offset + (1-width)*size/2, pitch*4*shoulder - yaw*.023*shoulder*size/2);
+    output.drawImage(blend,0,sy,size,Math.min(5,size-sy),0,sy,size,Math.min(5,size-sy));
+  }
+  output.resetTransform();
+  canvas.style.opacity = '1';
+  picture.style.backgroundImage = 'none';
 }
-strips.forEach(strip => strip.addEventListener('load', () => {
-  if (!frame) render(performance.now());
-}));
-function turn(col, row) {
-  if (col === targetX && row === targetY) return;
-  startX = x; startY = y;
-  targetX = col; targetY = row;
-  began = performance.now();
-  if (!frame) frame = requestAnimationFrame(render);
+function render(now) {
+  const dt = Math.min(50, now-last || 16);
+  last = now;
+  const head = motion.matches ? 1 : -Math.expm1(-dt/63);
+  const torso = motion.matches ? 1 : -Math.expm1(-dt/115);
+  x += (targetX-x)*head; y += (targetY-y)*head;
+  bodyX += (x-bodyX)*torso; bodyY += (y-bodyY)*torso;
+  paint();
+  frame = Math.max(Math.abs(targetX-bodyX),Math.abs(targetY-bodyY),
+    Math.abs(targetX-x),Math.abs(targetY-y)) > .003 ? requestAnimationFrame(render) : 0;
 }
+function schedule() {
+  if (!frame) { last = performance.now()-16; frame = requestAnimationFrame(render); }
+}
+strips.forEach(strip => strip.addEventListener('load',schedule));
+function turn(col,row) { targetX=col; targetY=row; schedule(); }
 function follow(event) {
   const b = picture.getBoundingClientRect();
-  const dx = event.clientX - b.left - b.width * .5;
-  const dy = event.clientY - b.top - b.height * .235;
-  if (Math.hypot(dx, dy) < b.width * .07) return turn(4, 4);
-  const angle = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4;
-  turn(4 + 4 * Math.round(Math.cos(angle)), 4 + 4 * Math.round(Math.sin(angle)));
+  const dx = (event.clientX-b.left-b.width*.5)/(b.width*.34);
+  const dy = (event.clientY-b.top-b.height*.235)/(b.height*.28);
+  turn(4+4*Math.tanh(dx),4+4*Math.tanh(dy));
 }
 screen.addEventListener('pointerdown', event => {
   follow(event);
