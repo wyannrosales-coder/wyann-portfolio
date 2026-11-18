@@ -210,6 +210,9 @@
  function syncRail(){
   const ratio=Math.max(0,Math.min(1,railRatio())),travel=Math.max(0,railTrack.clientHeight-railThumb.offsetHeight);
   railThumb.style.translate=`0 ${ratio*travel}px`;railProgress.style.height=`${ratio*100}%`;railThumb.setAttribute('aria-valuenow',String(Math.round(ratio*100)));
+  const markers=[...railMarkers.children];let nearest=null,distance=Infinity;
+  markers.forEach(marker=>{const value=Number(marker.dataset.ratio),gap=Math.abs(value-ratio);marker.classList.toggle('passed',value<=ratio);if(gap<distance){distance=gap;nearest=marker;}});
+  markers.forEach(marker=>marker.classList.toggle('current',marker===nearest));
  }
  function buildRail(){
   railMarkers.replaceChildren();
@@ -217,8 +220,9 @@
   const maxScroll=Math.max(1,study.scrollHeight-study.clientHeight);
   sections.slice(0,8).forEach((section,index)=>{
    const marker=document.createElement('button'),heading=section.querySelector('h2,h3,p');
-   marker.type='button';marker.className='case-rail-marker';marker.style.top=`${Math.min(100,section.offsetTop/maxScroll*100)}%`;
-   marker.innerHTML=`<span>${String(index+1).padStart(2,'0')}</span><b>${heading?.textContent?.trim().slice(0,32)||'End'}</b>`;
+   const ratio=Math.min(1,section.offsetTop/maxScroll),title=heading?.textContent?.trim().slice(0,32)||'End';
+   marker.type='button';marker.className='case-rail-marker';marker.style.top=`${ratio*100}%`;marker.dataset.ratio=String(ratio);marker.setAttribute('aria-label',`Go to ${title}`);
+   marker.innerHTML=`<i class="case-rail-lines"><span></span><span></span><span></span></i><b>${title}</b>`;
    marker.onclick=()=>study.scrollTo({top:Math.min(maxScroll,section.offsetTop),behavior:reduced()?'instant':'smooth'});railMarkers.append(marker);
   });
   syncRail();
