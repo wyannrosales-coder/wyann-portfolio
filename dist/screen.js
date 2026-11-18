@@ -208,6 +208,8 @@ function changeSection(open) {
   switcher.textContent = open ? '← Intro' : 'About me →';
   switcher.setAttribute('aria-expanded',String(open));
   if (open) {
+    about.scrollTop = 0;
+    about.focus({preventScroll:true});
     introChannel = channel.value;
     channel.value = aboutChannel && aboutChannel !== introChannel ? aboutChannel : String((Number(introChannel)+1)%5);
     screen.classList.add('posing');
@@ -236,6 +238,14 @@ switcher.addEventListener('click',()=>changeSection(!showingAbout));
 screen.addEventListener('wheel',event=>{
   if (event.ctrlKey || event.target.closest('select,dialog')) return;
   const horizontal=Math.abs(event.deltaX)>Math.abs(event.deltaY);
+  if (showingAbout && !horizontal) {
+    if (!about.contains(event.target)) {
+      event.preventDefault();
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? about.clientHeight : 1;
+      about.scrollTop += event.deltaY * unit;
+    }
+    return;
+  }
   if (!horizontal && (innerWidth<=760 || document.documentElement.scrollHeight>innerHeight+8)) return;
   const delta=horizontal ? event.deltaX : event.deltaY;
   if (Math.abs(delta)<3) return;
