@@ -130,28 +130,38 @@ screen.addEventListener('pointerleave', event => {
   if (event.pointerType !== 'touch') turn(0, 4);
 });
 
-// Mobile motion parallax. Browsers with implicit permission start immediately;
-// iOS requests access on the visitor's first gesture, then stays enabled.
+// Mobile motion parallax with explicit permission and neutral-position calibration.
+let gyroBase=null,gyroSmooth={x:0,y:0},gyroListening=false;
+const motionPrompt=document.createElement('button');
+motionPrompt.type='button';motionPrompt.className='motion-prompt';motionPrompt.textContent='Enable motion';
+motionPrompt.setAttribute('aria-label','Enable phone motion controls');screen.append(motionPrompt);
 function gyroMove(event){
   if(innerWidth>900 || motion.matches || event.gamma == null || event.beta == null) return;
-  const gx=Math.max(-1,Math.min(1,event.gamma/28));
-  const gy=Math.max(-1,Math.min(1,(event.beta-42)/32));
-  screen.style.setProperty('--gyro-bg-x',`${gx*12}px`);
-  screen.style.setProperty('--gyro-bg-y',`${gy*9}px`);
-  screen.style.setProperty('--gyro-x',gx.toFixed(3));
-  screen.style.setProperty('--gyro-y',gy.toFixed(3));
-  picture.style.setProperty('--pan-x',`${gx*7}px`);
-  picture.style.setProperty('--pan-y',`${gy*5}px`);
+  if(!gyroBase){gyroBase={gamma:event.gamma,beta:event.beta};motionPrompt.hidden=true;return;}
+  const rawX=Math.max(-1,Math.min(1,(event.gamma-gyroBase.gamma)/18));
+  const rawY=Math.max(-1,Math.min(1,(event.beta-gyroBase.beta)/18));
+  gyroSmooth.x+=(rawX-gyroSmooth.x)*.16;gyroSmooth.y+=(rawY-gyroSmooth.y)*.16;
+  const gx=gyroSmooth.x,gy=gyroSmooth.y;
+  screen.style.setProperty('--gyro-bg-x',`${gx*20}px`);
+  screen.style.setProperty('--gyro-bg-y',`${gy*14}px`);
+  screen.style.setProperty('--gyro-x',gx.toFixed(3));screen.style.setProperty('--gyro-y',gy.toFixed(3));
+  picture.style.setProperty('--pan-x',`${gx*13}px`);picture.style.setProperty('--pan-y',`${gy*9}px`);
   if(!screen.querySelector('.thought.aimed')&&!screen.classList.contains('in-about')&&!screen.classList.contains('in-portfolio')) turn(4+gx*4,4+gy*4);
   document.dispatchEvent(new CustomEvent('wyann:gyro',{detail:{x:gx,y:gy}}));
 }
-function startGyro(){window.addEventListener('deviceorientation',gyroMove,{passive:true});}
-startGyro();
-document.addEventListener('pointerdown',async function askMotion(){
-  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-    try{if(await DeviceOrientationEvent.requestPermission()==='granted')startGyro();}catch{}
-  }
-},{once:true,passive:true});
+function startGyro(){if(gyroListening)return;gyroListening=true;window.addEventListener('deviceorientation',gyroMove,{passive:true});}
+async function enableMotion(){
+  motionPrompt.disabled=true;motionPrompt.textContent='Enabling…';gyroBase=null;
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+      if(await DeviceOrientationEvent.requestPermission()!=='granted')throw new Error('denied');
+    }
+    startGyro();motionPrompt.textContent='Move your phone';motionPrompt.disabled=false;
+  }catch{motionPrompt.textContent='Motion unavailable';setTimeout(()=>motionPrompt.hidden=true,1800);}
+}
+motionPrompt.addEventListener('click',enableMotion);
+if(!matchMedia('(pointer:coarse)').matches||typeof DeviceOrientationEvent==='undefined')motionPrompt.hidden=true;
+else if(typeof DeviceOrientationEvent.requestPermission!=='function')startGyro();
 
 let glitchTimer;
 const variants = {};

@@ -7,7 +7,7 @@ const levels=[
   {name:'Violet Citadel',color:'#c2a0ff',sky:'#38245b',boss:'Crown Engine',waves:[5,6,5,7]}
 ];
 let state='title',level=0,score=0,shield=6,player={x:.5,y:.82},aim={x:.5,y:.4};
-let enemies=[],bolts=[],traces=[],wave=0,clock=0,nextWave=1,shotDelay=0,invulnerable=0,held=false;
+let enemies=[],bolts=[],shots=[],traces=[],wave=0,clock=0,nextWave=1,shotDelay=0,invulnerable=0,held=false;
 let steer={x:0,y:0},width,height,last=0,travel=0,bank=0,scores=[];
 try { scores=JSON.parse(localStorage.getItem('vector-run-scores')||'[]').filter(row=>/^[A-Z]{3}$/.test(row.name)&&Number.isFinite(row.score)); } catch {}
 let audioContext, muted=false, pickups=[], sparks=[], kills=0, rapid=0, beat=0;
@@ -44,7 +44,7 @@ function overlay(title,brief,action,handler){
  document.body.classList.remove('play');$('#pause').hidden=true;held=false;keys.clear();steer={x:0,y:0};
 }
 function resume(){state='flight';$('section').hidden=true;$('#pause').hidden=false;document.body.classList.add('play');last=performance.now();}
-function startLevel(){rockets=[];blasts=[];lastDraft=-1;wave=0;clock=0;pickups=[];sparks=[];rapid=0;nextWave=.6;enemies=[];bolts=[];traces=[];player={x:.5,y:.82};shield=Math.min(6,shield+2);invulnerable=1;resume();}
+function startLevel(){rockets=[];blasts=[];lastDraft=-1;wave=0;clock=0;pickups=[];sparks=[];rapid=0;nextWave=.6;enemies=[];bolts=[];shots=[];traces=[];player={x:.5,y:.82};shield=Math.min(6,shield+2);invulnerable=1;resume();}
 function restart(){Object.keys(mods).forEach(k=>mods[k]=0);missiles=3;enableAudio();kills=0;level=0;score=0;shield=6;$('form').hidden=true;startLevel();}
 function end(won){
  state='end';overlay(won?'Route cleared':'Flight over','Final score '+score+' · '+levels[level].name,'Fly again',restart);
@@ -80,19 +80,45 @@ function damage(enemy,amount){
  enemy.hp-=amount;score+=10;
  if(enemy.hp<=0){explode(enemy);score+=enemy.boss?1200:90;enemies=enemies.filter(e=>e!==enemy);}
 }
+function assistedAngle(targetX,targetY){
+ let chosen=null,best=Infinity;
+ for(const enemy of enemies){
+  if(enemy.age<0)continue;
+  const d=Math.hypot((enemy.x-targetX)*width,(enemy.y-targetY)*height)-radius(enemy);
+  if(d<36&&d<best){best=d;chosen=enemy;}
+ }
+ const x=chosen?.x??targetX,y=chosen?.y??targetY;
+ return Math.atan2((y-player.y)*height,(x-player.x)*width);
+}
 function shoot(){
  shotDelay=rapid>0?.065:.16;tone(mods.laser?1120:840,160,.09,'square',.019);
  const spread=mods.triple?[-1,0,1]:[0];
  for(const side of spread){
- const x=aim.x+side*(.045+.012*mods.triple),y=aim.y;
- traces.push({x,y,life:.10,color:mods.laser?'#ff9de9':'#a1ffec'});
- const hits=enemies.filter(e=>e.age>=0&&Math.hypot((e.x-x)*width,(e.y-y)*height)<radius(e)*1.3+6).sort((a,b)=>b.depth-a.depth);
- for(const target of hits.slice(0,1+mods.laser)){
- damage(target,1+mods.laser);let from=target;const visited=new Set([target]);
- for(let n=0;n<mods.bounce;n++){const near=enemies.filter(e=>e.age>=0&&!visited.has(e)).sort((a,b)=>Math.hypot(a.x-from.x,a.y-from.y)-Math.hypot(b.x-from.x,b.y-from.y))[0];
- if(!near||Math.hypot(near.x-from.x,near.y-from.y)>.4)break;
- traces.push({sx:from.x,sy:from.y,x:near.x,y:near.y,color:'#ffda70',life:.16});damage(near,1);visited.add(near);from=near;}
- }}
+  const angle=assistedAngle(aim.x,aim.y)+side*.09,speed=Math.min(width,height)*(mods.laser?1.65:1.35);
+  shots.push({x:player.x,y:player.y,px:player.x,py:player.y,vx:Math.cos(angle)*speed/width,vy:Math.sin(angle)*speed/height,life:1.25,damage:1+mods.laser,pierce:mods.laser,color:mods.laser?'#ff9de9':'#a1ffec'});
+ }
+}
+function bounceFrom(target){
+ let from=target;const visited=new Set([target]);
+ for(let n=0;n<mods.bounce;n++){
+  const near=enemies.filter(e=>e.age>=0&&!visited.has(e)).sort((a,b)=>Math.hypot(a.x-from.x,a.y-from.y)-Math.hypot(b.x-from.x,b.y-from.y))[0];
+  if(!near||Math.hypot(near.x-from.x,near.y-from.y)>.4)break;
+  traces.push({sx:from.x,sy:from.y,x:near.x,y:near.y,color:'#ffda70',life:.16});damage(near,1);visited.add(near);from=near;
+ }
+}
+function updateShots(dt){
+ for(const shot of shots){
+  shot.px=shot.x;shot.py=shot.y;shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;shot.life-=dt;
+  const ax=shot.px*width,ay=shot.py*height,bx=shot.x*width,by=shot.y*height,abx=bx-ax,aby=by-ay,den=abx*abx+aby*aby||1;
+  let hit=null,hitT=2;
+  for(const enemy of enemies){
+   if(enemy.age<0)continue;
+   const ex=enemy.x*width,ey=enemy.y*height,t=clamp(((ex-ax)*abx+(ey-ay)*aby)/den,0,1),hx=ax+abx*t,hy=ay+aby*t;
+   if(t<hitT&&Math.hypot(ex-hx,ey-hy)<=radius(enemy)+5){hit=enemy;hitT=t;}
+  }
+  if(hit){shot.x=(ax+abx*hitT)/width;shot.y=(ay+aby*hitT)/height;damage(hit,shot.damage);bounceFrom(hit);tone(520,120,.05,'square',.015);if(shot.pierce>0)shot.pierce--;else shot.life=0;}
+ }
+ shots=shots.filter(s=>s.life>0&&s.x>-.08&&s.x<1.08&&s.y>-.08&&s.y<1.08);
 }
 function missile(){if(state!=='flight'||missiles<=0)return;missiles--;rockets.push({sx:player.x,sy:player.y,x:aim.x,y:aim.y,t:0});tone(270,55,.28,'sawtooth');}
 canvas.oncontextmenu=e=>e.preventDefault();$('#missile').onclick=e=>{if(!e.detail)missile();};
@@ -122,6 +148,7 @@ function update(dt){
  if(e.fire<=0){e.fire=(e.boss?.92:3.8)-level*.12;const angle=Math.atan2((player.y-e.y)*height,(player.x-e.x)*width);
  const spread=e.boss?level+1:0;for(let n=-spread;n<=spread;n++){const speed=Math.min(width,height)*(.31+level*.035);bolts.push({x:e.x,y:e.y,vx:Math.cos(angle+n*.19)*speed/width,vy:Math.sin(angle+n*.19)*speed/height});}}}
  if(held&&shotDelay<=0)shoot();
+ updateShots(dt);
  for(const b of bolts){b.x+=b.vx*dt;b.y+=b.vy*dt;if(invulnerable<=0&&Math.hypot((b.x-player.x)*width,(b.y-player.y)*height)<Math.min(width,height)*.025){shield--;tone(95,28,.3,'sawtooth');invulnerable=1.2;b.y=2;if(!shield){end(false);return;}}}
  bolts=bolts.filter(b=>b.x>-.1&&b.x<1.1&&b.y>-.1&&b.y<1.1);for(const t of traces)t.life-=dt;traces=traces.filter(t=>t.life>0);
  $('output').textContent=levels[level].name+' · '+String(score).padStart(6,'0')+' · SHIELD '+shield+' · MSL '+missiles+(rapid>0?' · RAPID '+Math.ceil(rapid):'');
@@ -150,6 +177,8 @@ function draw(){
  ctx.fillStyle='#ffb45c';for(const b of bolts){ctx.beginPath();ctx.arc(b.x*width,b.y*height,5,0,Math.PI*2);ctx.fill();}
  for(const r of rockets){const x=r.sx+(r.x-r.sx)*r.t,y=r.sy+(r.y-r.sy)*r.t;ctx.fillStyle='#ffcd68';ctx.fillRect(x*width-4,y*height-5,8,10);}
  for(const b of blasts){ctx.strokeStyle='#ffc069';ctx.lineWidth=3;ctx.beginPath();ctx.arc(b.x*width,b.y*height,b.radius*(1-b.life/.35),0,Math.PI*2);ctx.stroke();ctx.lineWidth=1;}
+ ctx.save();ctx.lineWidth=mods.laser?4:2;ctx.shadowBlur=12;
+ for(const s of shots){ctx.strokeStyle=s.color;ctx.shadowColor=s.color;line(s.px*width,s.py*height,s.x*width,s.y*height,s.color);ctx.fillStyle='#fff';ctx.fillRect(s.x*width-2,s.y*height-2,4,4);}ctx.restore();
  for(const t of traces)line((t.sx??player.x)*width,(t.sy??player.y)*height,t.x*width,t.y*height,t.color);
  for(const p of pickups){const x=p.x*width,y=p.y*height;ctx.save();ctx.translate(x,y);ctx.strokeStyle='#f7edaa';ctx.rotate(Math.PI/4);ctx.strokeRect(-9,-9,18,18);ctx.restore();ctx.fillStyle='#fff3a6';ctx.textAlign='center';ctx.fillText(p.type,x,y-16);}
  for(const s of sparks){ctx.globalAlpha=Math.min(1,s.life*2);ctx.fillStyle=stage.color;ctx.fillRect(s.x*width,s.y*height,4,3);}ctx.globalAlpha=1;

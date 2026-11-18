@@ -108,6 +108,8 @@ h1 span { display: block; }
   pointer-events: none;
   filter: drop-shadow(2px 2px 0 #0b0b0b) drop-shadow(-1px -1px 0 #080808);
 }
+.motion-prompt{display:none;}
+@media(max-width:900px) and (pointer:coarse){.motion-prompt{display:block;position:absolute;z-index:12;left:50%;bottom:max(18px,env(safe-area-inset-bottom));translate:-50% 0;min-height:44px;padding:10px 18px;border:1px solid #ffffffaa;border-radius:999px;background:#080c1be8;color:#fff;font:700 14px/1 monospace;box-shadow:0 8px 30px #0009;}.motion-prompt[hidden]{display:none;}}
 .pointer::after {
   content: "";
   display: block;
