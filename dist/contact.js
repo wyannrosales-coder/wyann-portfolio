@@ -4,7 +4,7 @@
 (() => {
   'use strict';
   const TO = 'hello@wyannrosales.com';
-  const WEB3FORMS_KEY = '';              // paste the access key emailed to hello@wyannrosales.com
+  const WEB3FORMS_KEY = '4003fc7a-1ba5-4403-8606-70b0f34d8a1f';   // Web3Forms access key (public by design) for hello@wyannrosales.com
   const ENDPOINT = 'https://api.web3forms.com/submit';
 
   const TOPICS = {
