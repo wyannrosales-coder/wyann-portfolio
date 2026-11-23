@@ -39,7 +39,7 @@
   panel.querySelector('#work-title').textContent=p.name;
   panel.querySelector('#work-subtitle').textContent=p.subtitle+' '+p.scope;
   panel.querySelector('#work-role').textContent=p.role;
-  panel.querySelector('#work-count').textContent=String(i+1).padStart(2,'0')+' / 05 · '+p.scope;
+  panel.querySelector('#work-count').textContent=String(i+1).padStart(2,'0')+' / '+String(projects.length).padStart(2,'0')+' · '+p.scope;
   const next=projects[(i+1)%projects.length];nextPeek.querySelector('img').src=next.cover;nextPeek.setAttribute('aria-label','Next project: '+next.name);
   [...tiles.children].forEach((t,j)=>{t.setAttribute('aria-pressed',String(i===j));});
  }
@@ -61,7 +61,7 @@
   await Promise.all([out.finished.catch(()=>{}),incoming.finished.catch(()=>{})]);old.remove();if(ticket===serial)incoming.cancel();switching=false;nextPeek.classList.remove('waiting');
 
  }
- ready=fetch('projects.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(async data=>{
+ ready=fetch('projects.json?v=redesign').then(r=>{if(!r.ok)throw Error();return r.json();}).then(async data=>{
   projects=data;
   projects.forEach((p,i)=>{const card=el('button',null,'coverflow-card');card.type='button';card.dataset.cover=i;const img=el('img');img.src=p.cover;img.alt=p.name+' project preview';img.draggable=false;card.append(img);carousel.append(card);});
   await Promise.all(projects.map(async p=>{const image=new Image();image.src=p.cover;try{await image.decode();}catch{}p.preloadedCover=image;}));
@@ -138,7 +138,7 @@
   flush();
   let firstGallery=true;
   while(imageIndex<p.images.length){const more=el('section',null,'case-gallery');if(firstGallery){more.append(el('h3','A closer look'));firstGallery=false;}const images=el('div',null,'chapter-images');for(let i=0;i<2&&imageIndex<p.images.length;i++){const im=el('img');im.src=p.images[imageIndex++];im.alt=p.name+' interface detail '+imageIndex;im.loading='lazy';images.append(im);}more.append(images);content.append(more);}
-  const footer=el('footer',null,'case-end');footer.append(el('p','Thanks for taking a closer look.'));const source=el('a','Original case study ↗');source.href=p.source;source.target='_blank';source.rel='noopener';const back=el('button','← Back to selected work','pill');back.onclick=closeStudy;footer.append(source,back);content.append(footer);
+  const footer=el('footer',null,'case-end');footer.append(el('p','Thanks for taking a closer look.'));const source=el('a',(p.sourceLabel||'Original case study')+' ↗');source.href=p.source;source.target='_blank';source.rel='noopener';const back=el('button','← Back to selected work','pill');back.onclick=closeStudy;footer.append(source,back);content.append(footer);
   prepareImageButtons();
   try{await powerTransition(false,()=>{gallery.hidden=true;caseShell.hidden=false;study.hidden=false;study.scrollTop=0;resetCrawl();document.querySelector('.set').inert=true;document.body.classList.add('reading-project');});buildRail();study.focus({preventScroll:true});}finally{powerBusy=false;}
   if(!reduced())content.animate([{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:500,easing:'ease-out'});
