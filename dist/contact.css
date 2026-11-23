@@ -1,0 +1,64 @@
+/* Contact form modal ("Get in touch"). Behaviour lives in contact.js. */
+dialog.contact-room{
+  width:min(604px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;
+  padding:32px 32px 28px;border-radius:22px;background:#171b22;border:1px solid #9daabc;
+  box-shadow:0 0 42px #92b1d440,0 30px 80px #000a;color:#f6f7fa;overscroll-behavior:contain;
+}
+dialog.contact-room[open]{animation:contact-in .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes contact-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.contact-room .contact-close{position:absolute;top:14px;right:18px;width:40px;height:40px;border:0;background:none;font-size:30px;line-height:1;color:#c9d3e0;border-radius:50%}
+.contact-room .contact-close:hover{background:#ffffff14;color:#fff}
+.contact-room .eyebrow{font:12px/1.4 monospace;letter-spacing:.14em;text-transform:uppercase;color:#bcdcf5;margin:0 0 10px}
+.contact-room h2{margin:0 40px 8px 0;font-size:clamp(30px,5vw,40px);line-height:1;letter-spacing:-.05em;font-weight:650}
+.contact-room .contact-sub{margin:0 0 22px;color:#b9c3d2;font-size:15px;line-height:1.5}
+
+.contact-room fieldset{border:0;margin:0 0 18px;padding:0;min-width:0}
+.contact-room legend,.contact-room label>span{display:block;font:600 13px/1.3 Arial,Helvetica,sans-serif;letter-spacing:.01em;color:#e7ecf4;margin:0 0 7px;padding:0}
+.contact-room legend i,.contact-room label>span i{font-style:normal;font-weight:400;color:#8f9bad;margin-left:6px}
+.contact-topics{display:flex;flex-wrap:wrap;gap:8px}
+.contact-topics label{position:relative;margin:0}
+.contact-topics input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.contact-room .contact-topics label>span{display:inline-block;margin:0;padding:.6em .95em;border-radius:999px;border:1.5px solid #6f7e92;background:#10141a;color:#dce4ef;font:500 14px/1.2 Arial,Helvetica,sans-serif;letter-spacing:0;cursor:pointer;transition:background .16s,color .16s,border-color .16s,box-shadow .16s}
+.contact-topics label:hover>span{border-color:#cfe0f3}
+.contact-topics input:checked+span{background:#f4f6fa;color:#171710;border-color:#f4f6fa;box-shadow:0 0 20px #bedcff36}
+.contact-topics input:focus-visible+span{outline:2px dashed #cce6ff;outline-offset:3px}
+
+.contact-grid:not(.has-extra) .company{grid-column:1/-1}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 14px;margin:0 0 14px}
+.contact-room label{display:block;margin:0}
+.contact-room input[type=text],.contact-room input[type=email],.contact-room input[type=url],.contact-room textarea{
+  display:block;width:100%;margin:0;padding:12px 13px;color:#f6f7fa;background:#10141a;border:1px solid #6f7e92;border-radius:10px;font:15px/1.4 Arial,Helvetica,sans-serif;
+  transition:border-color .16s,box-shadow .16s;
+}
+.contact-room textarea{min-height:128px;resize:vertical}
+.contact-room input::placeholder,.contact-room textarea::placeholder{color:#7c8798}
+.contact-room input:focus,.contact-room textarea:focus{outline:none;border-color:#cfe0f3;box-shadow:0 0 0 3px #bedcff2e}
+.contact-room [aria-invalid=true]{border-color:#ff9a9a;box-shadow:0 0 0 3px #ff9a9a24}
+.contact-room .err{display:block;min-height:0;margin:6px 0 0;font:13px/1.35 Arial,Helvetica,sans-serif;color:#ffb3b3}
+.contact-room .err:empty{display:none}
+.contact-room .contact-extra[hidden]{display:none}
+.contact-room .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0}
+
+.contact-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px}
+.contact-foot .pill{font-size:16px;padding:.7em 1.3em;min-height:46px}
+.contact-foot .pill[disabled]{opacity:.65;cursor:progress}
+.contact-note{margin:0;font-size:13px;color:#9aa6b8}
+.contact-note a{color:#dce8f7;text-underline-offset:3px}
+.contact-status{margin:14px 0 0;min-height:1.2em;font-size:14px;color:#ffb3b3}
+.contact-status:empty{display:none}
+
+.contact-done{padding:6px 0 4px}
+.contact-done[hidden]{display:none}
+.contact-done .tick{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;border:1.5px solid #bcdcf5;color:#bcdcf5;font-size:26px;margin:0 0 18px;box-shadow:0 0 28px #92b1d447}
+.contact-done p{color:#c3ccd9;line-height:1.55;margin:0 0 20px;font-size:16px}
+.contact-done .row{display:flex;gap:10px;flex-wrap:wrap}
+.contact-done .pill{font-size:15px}
+
+@media(max-width:560px){
+  dialog.contact-room{padding:26px 20px 22px;border-radius:18px}
+  .contact-grid{grid-template-columns:1fr}
+  .contact-foot{flex-direction:column;align-items:stretch}
+  .contact-foot .pill{width:100%}
+  .contact-note{text-align:center}
+}
+@media(prefers-reduced-motion:reduce){dialog.contact-room[open]{animation:none}}
